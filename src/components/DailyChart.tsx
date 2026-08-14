@@ -156,8 +156,8 @@ function compact(entries: HistoryBucket[]): ChartBucket[] {
   return out;
 }
 
-export function DailyChart({ range, onRangeChange, history, readOnly = false }: { range?: DateRange; onRangeChange?: (range: DateRange) => void; history?: HistoryChartResponse; readOnly?: boolean }) {
-  const [metric, setMetric] = useState<Metric>('usd');
+export function DailyChart({ range, onRangeChange, history, readOnly = false, defaultMetric = 'usd', showFullViewport = false }: { range?: DateRange; onRangeChange?: (range: DateRange) => void; history?: HistoryChartResponse; readOnly?: boolean; defaultMetric?: Metric; showFullViewport?: boolean }) {
+  const [metric, setMetric] = useState<Metric>(defaultMetric);
   const [groupBy, setGroupBy] = useState<HistoryGroupBy>('harness');
   const [timeframe, setTimeframe] = useState<HistoryTimeframe>('1d');
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -176,7 +176,8 @@ export function DailyChart({ range, onRangeChange, history, readOnly = false }: 
     [data, history, timeframe, groupBy],
   );
   const [viewport, setViewport] = useState<ChartViewport>({ start: 0, end: 0 });
-  const preferredViewportSize = timeframe === '1d' ? 30 : 168;
+  const activeGroupBy: HistoryGroupBy = history ? history.groupBy : groupBy;
+  const preferredViewportSize = showFullViewport ? buckets.length : timeframe === '1d' ? 30 : 168;
   const effectiveViewport = useMemo(() => (
     viewport.end > 0
       ? normalizeChartViewport(viewport, buckets.length)
@@ -318,14 +319,14 @@ export function DailyChart({ range, onRangeChange, history, readOnly = false }: 
         return metric === 'tokens' ? value / 1_000_000 : value;
       }),
       backgroundColor: visibleBuckets.map(bucket => {
-        const color = groupBy === 'model' ? colorForModel(name) : colorForSource(name);
+        const color = activeGroupBy === 'model' ? colorForModel(name) : colorForSource(name);
         return hasRange && !inRange(bucket.timestamp) ? fade(color, 0.16) : color;
       }),
       borderRadius: 0,
       maxBarThickness: 34,
       yAxisID: 'value',
     })),
-  }), [visibleBuckets, series, hidden, metric, groupBy, timeframe, from, to, hasRange]);
+  }), [visibleBuckets, series, hidden, metric, activeGroupBy, timeframe, from, to, hasRange]);
 
   const navigatorBuckets = useMemo(() => buckets.map(bucket => ({
     timestamp: bucket.timestamp,
@@ -391,7 +392,7 @@ export function DailyChart({ range, onRangeChange, history, readOnly = false }: 
 
         {series.map(name => {
           const off = hidden.has(name);
-          const color = groupBy === 'model' ? colorForModel(name) : colorForSource(name);
+          const color = activeGroupBy === 'model' ? colorForModel(name) : colorForSource(name);
           return (
             <button
               key={name}

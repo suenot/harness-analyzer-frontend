@@ -52,6 +52,8 @@ export function UsageDashboard({ summary, details, ownerHandle, visibility }: Us
             onRangeChange={isPublic ? undefined : setRange}
             history={isPublic ? details?.history ?? EMPTY_PUBLIC_HISTORY : undefined}
             readOnly={isPublic}
+            defaultMetric={isPublic ? 'tokens' : 'usd'}
+            showFullViewport={isPublic}
           />
           <PieSection range={range} setRange={setRange} details={details} publishedSnapshot={isPublic} />
           <Heatmap range={isPublic ? undefined : range} entries={isPublic ? details?.heatmap ?? [] : undefined} />
