@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import type { DateRange, HistoryChartResponse, PublicSnapshotDetails, Summary } from '../lib/api';
+import type { DateRange, PublicSnapshotDetails, Summary } from '../lib/api';
 import { DailyChart } from './DailyChart';
 import { Heatmap } from './Heatmap';
 import { PieSection } from './PieSection';
 import { StatCards } from './StatCards';
-
-const EMPTY_PUBLIC_HISTORY: HistoryChartResponse = { timeframe: '1d', groupBy: 'harness', buckets: [] };
 
 interface UsageDashboardProps {
   summary: Summary;
@@ -50,9 +48,10 @@ export function UsageDashboard({ summary, details, ownerHandle, visibility }: Us
           <DailyChart
             range={range}
             onRangeChange={isPublic ? undefined : setRange}
-            history={isPublic ? details?.history ?? EMPTY_PUBLIC_HISTORY : undefined}
+            charts={isPublic && details ? [details.history, ...(details.history_variants ?? [])] : undefined}
             readOnly={isPublic}
             defaultMetric={isPublic ? 'tokens' : 'usd'}
+            defaultGroupBy={isPublic ? details?.history.groupBy ?? 'model' : 'harness'}
             showFullViewport={isPublic}
           />
           <PieSection range={range} setRange={setRange} details={details} publishedSnapshot={isPublic} />

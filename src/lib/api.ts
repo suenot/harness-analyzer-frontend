@@ -264,6 +264,7 @@ export interface PublicSnapshotTotals {
 
 export interface PublicSnapshotDetails {
   history: HistoryChartResponse;
+  history_variants?: HistoryChartResponse[];
   by_harness: UsageBreakdown;
   by_model: UsageBreakdown;
   hourly: HourlyEntry[];

@@ -156,14 +156,16 @@ function compact(entries: HistoryBucket[]): ChartBucket[] {
   return out;
 }
 
-export function DailyChart({ range, onRangeChange, history, readOnly = false, defaultMetric = 'usd', showFullViewport = false }: { range?: DateRange; onRangeChange?: (range: DateRange) => void; history?: HistoryChartResponse; readOnly?: boolean; defaultMetric?: Metric; showFullViewport?: boolean }) {
+export function DailyChart({ range, onRangeChange, charts, readOnly = false, defaultMetric = 'usd', defaultGroupBy = 'harness', showFullViewport = false }: { range?: DateRange; onRangeChange?: (range: DateRange) => void; charts?: HistoryChartResponse[]; readOnly?: boolean; defaultMetric?: Metric; defaultGroupBy?: HistoryGroupBy; showFullViewport?: boolean }) {
   const [metric, setMetric] = useState<Metric>(defaultMetric);
-  const [groupBy, setGroupBy] = useState<HistoryGroupBy>('harness');
+  const [groupBy, setGroupBy] = useState<HistoryGroupBy>(defaultGroupBy);
   const [timeframe, setTimeframe] = useState<HistoryTimeframe>('1d');
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const { data, loading } = useApi(
-    () => history ? Promise.resolve(history) : api.getHistory(timeframe, groupBy, 0),
-    [history, timeframe, groupBy],
+    () => charts
+      ? Promise.resolve(charts.find(chart => chart.timeframe === timeframe && chart.groupBy === groupBy) ?? null)
+      : api.getHistory(timeframe, groupBy, 0),
+    [charts, timeframe, groupBy],
   );
 
   const chartRef = useRef<ChartJS<'bar', number[], string> | null>(null);
@@ -172,11 +174,10 @@ export function DailyChart({ range, onRangeChange, history, readOnly = false, de
   const [drag, setDrag] = useState<{ left: number; right: number; count: number; total: number } | null>(null);
 
   const buckets = useMemo(
-    () => data && (history || (data.timeframe === timeframe && data.groupBy === groupBy)) ? compact(data.buckets) : [],
-    [data, history, timeframe, groupBy],
+    () => data && (charts || (data.timeframe === timeframe && data.groupBy === groupBy)) ? compact(data.buckets) : [],
+    [data, charts, timeframe, groupBy],
   );
   const [viewport, setViewport] = useState<ChartViewport>({ start: 0, end: 0 });
-  const activeGroupBy: HistoryGroupBy = history ? history.groupBy : groupBy;
   const preferredViewportSize = showFullViewport ? buckets.length : timeframe === '1d' ? 30 : 168;
   const effectiveViewport = useMemo(() => (
     viewport.end > 0
@@ -201,6 +202,20 @@ export function DailyChart({ range, onRangeChange, history, readOnly = false, de
     }
     return Object.keys(totals).sort((a, b) => totals[b] - totals[a]);
   }, [buckets, metric]);
+
+  // With snapshot charts, only offer groupings and timeframes the snapshot actually carries.
+  const availableCombos = useMemo(
+    () => new Set((charts ?? []).map(chart => `${chart.timeframe}:${chart.groupBy}`)),
+    [charts],
+  );
+  const groupOptions = useMemo(
+    () => charts ? GROUP_OPTIONS.filter(option => TIMEFRAME_OPTIONS.some(t => availableCombos.has(`${t.value}:${option.value}`))) : GROUP_OPTIONS,
+    [charts, availableCombos],
+  );
+  const timeframeOptions = useMemo(
+    () => charts ? TIMEFRAME_OPTIONS.filter(option => GROUP_OPTIONS.some(g => availableCombos.has(`${option.value}:${g.value}`))) : TIMEFRAME_OPTIONS,
+    [charts, availableCombos],
+  );
 
   const rangeLength = timeframe === '1d' ? 10 : 13;
   const from = range?.from?.slice(0, rangeLength);
@@ -319,14 +334,14 @@ export function DailyChart({ range, onRangeChange, history, readOnly = false, de
         return metric === 'tokens' ? value / 1_000_000 : value;
       }),
       backgroundColor: visibleBuckets.map(bucket => {
-        const color = activeGroupBy === 'model' ? colorForModel(name) : colorForSource(name);
+        const color = groupBy === 'model' ? colorForModel(name) : colorForSource(name);
         return hasRange && !inRange(bucket.timestamp) ? fade(color, 0.16) : color;
       }),
       borderRadius: 0,
       maxBarThickness: 34,
       yAxisID: 'value',
     })),
-  }), [visibleBuckets, series, hidden, metric, activeGroupBy, timeframe, from, to, hasRange]);
+  }), [visibleBuckets, series, hidden, metric, groupBy, timeframe, from, to, hasRange]);
 
   const navigatorBuckets = useMemo(() => buckets.map(bucket => ({
     timestamp: bucket.timestamp,
@@ -379,8 +394,8 @@ export function DailyChart({ range, onRangeChange, history, readOnly = false, de
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <Segmented options={METRIC_OPTIONS} value={metric} onChange={setMetric} ariaLabel="Metric" />
-        {!history && <Segmented
-          options={GROUP_OPTIONS}
+        {(groupOptions.length > 0 || !charts) && <Segmented
+          options={groupOptions.length > 0 ? groupOptions : GROUP_OPTIONS}
           value={groupBy}
           ariaLabel="Grouping"
           onChange={value => {
@@ -388,11 +403,11 @@ export function DailyChart({ range, onRangeChange, history, readOnly = false, de
             setHidden(new Set());
           }}
         />}
-        {!history && <Segmented options={TIMEFRAME_OPTIONS} value={timeframe} onChange={setTimeframe} ariaLabel="Timeframe" />}
+        {(timeframeOptions.length > 0 || !charts) && <Segmented options={timeframeOptions.length > 0 ? timeframeOptions : TIMEFRAME_OPTIONS} value={timeframe} onChange={setTimeframe} ariaLabel="Timeframe" />}
 
         {series.map(name => {
           const off = hidden.has(name);
-          const color = activeGroupBy === 'model' ? colorForModel(name) : colorForSource(name);
+          const color = groupBy === 'model' ? colorForModel(name) : colorForSource(name);
           return (
             <button
               key={name}
