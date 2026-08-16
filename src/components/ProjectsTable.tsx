@@ -73,7 +73,7 @@ function ProjectSummaryCard({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#BC1010]">Project unit</span>
-                  <span className="mt-1 line-clamp-2 block break-words text-xl font-black leading-none tracking-[-0.045em] text-[#111111] [overflow-wrap:anywhere] sm:text-2xl" title={projectLabel(project.cwd)}>
+                  <span className="mt-1 line-clamp-2 block break-words text-xl font-black leading-tight tracking-[-0.045em] text-[#111111] [overflow-wrap:anywhere] sm:text-2xl" title={projectLabel(project.cwd)}>
                     {projectLabel(project.cwd)}
                   </span>
                   {!publicView ? <span className="mt-3 line-clamp-2 block break-words font-mono text-[11px] leading-4 text-[#66645F] [overflow-wrap:anywhere]" title={project.cwd || '(no project path)'}>{project.cwd || '(no project path)'}</span> : null}

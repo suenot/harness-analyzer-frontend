@@ -39,6 +39,13 @@ test('keeps card metrics compact in a two by two grid', async () => {
   assert.match(source, /Array\.from\(\{ length: 4 \}/);
 });
 
+test('keeps project title descenders inside the two-line clamp', async () => {
+  const source = await projectsTableSource;
+
+  assert.match(source, /line-clamp-2 block break-words text-xl font-black leading-tight/);
+  assert.doesNotMatch(source, /line-clamp-2 block break-words text-xl font-black leading-none/);
+});
+
 test('renders expanded details inline as a readable full-width panel', async () => {
   const source = await projectsTableSource;
 
