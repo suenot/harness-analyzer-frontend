@@ -33,7 +33,9 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
         <section className="flex min-h-[calc(100dvh-65px)] flex-col border-x border-[var(--line-strong)]">
           <aside aria-labelledby="install-cli-label" className="flex min-w-0 shrink-0 flex-col gap-2 border-b border-[var(--line-strong)] bg-[var(--signal)] px-5 py-5 text-white sm:flex-row sm:items-baseline sm:justify-between sm:gap-6 sm:px-8 lg:px-12 lg:py-6">
             <p id="install-cli-label" className="shrink-0 font-mono text-xs font-bold uppercase tracking-[0.12em]">Install sync CLI</p>
-            <code className="block max-w-full select-all overflow-x-auto whitespace-nowrap font-mono text-[clamp(0.9rem,4vw,2rem)] font-black leading-none tracking-[-0.04em]">{CLI_INSTALL_COMMAND}</code>
+            <div className="min-w-0 max-w-full overflow-x-auto py-1 sm:text-right">
+              <code className="block select-all whitespace-nowrap font-mono text-[clamp(0.9rem,4vw,2rem)] font-black leading-[1.2] tracking-[-0.04em]">{CLI_INSTALL_COMMAND}</code>
+            </div>
           </aside>
 
           <div className="grid flex-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
@@ -52,20 +54,17 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
               </a>
             </div>
 
-            <div className="grid min-h-96 border-t border-[var(--line-strong)] bg-[var(--paper-deep)] p-5 lg:border-l lg:border-t-0 lg:p-8">
-              <div className="grid place-items-center border border-[var(--line-strong)] bg-[var(--paper)] p-8">
-                <img src="/harness-analyzer-logo.png" alt="Harness Analyzer mark" className="w-full max-w-64 object-contain mix-blend-multiply" />
-              </div>
-              <dl className="grid grid-cols-2 border-x border-b border-[var(--line-strong)] bg-[var(--line-strong)]">
+            <div className="min-h-80 border-t border-[var(--line-strong)] bg-[var(--paper-deep)] lg:border-l lg:border-t-0">
+              <dl className="grid h-full grid-cols-2 bg-[var(--line-strong)]">
                 {[
                   ['Sources', 'Claude + Codex'],
                   ['Measures', 'USD + tokens'],
                   ['Cache TTL', '5m + 1h'],
-                  ['Hosted sync', 'Aggregates only'],
+                  ['Hosted sync', 'Aggregates + host label'],
                 ].map(([label, value], index) => (
-                  <div key={label} className={`bg-[var(--paper)] p-4 ${index % 2 === 0 ? 'border-r border-[var(--line-strong)]' : ''} ${index < 2 ? 'border-b border-[var(--line-strong)]' : ''}`}>
+                  <div key={label} className={`flex min-h-40 flex-col justify-between bg-[var(--paper)] p-5 sm:p-6 lg:min-h-0 lg:p-8 ${index % 2 === 0 ? 'border-r border-[var(--line-strong)]' : ''} ${index < 2 ? 'border-b border-[var(--line-strong)]' : ''}`}>
                     <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">{label}</dt>
-                    <dd className="mt-2 text-sm font-black uppercase tracking-[-0.02em]">{value}</dd>
+                    <dd className="mt-8 text-[clamp(1.15rem,2.2vw,2rem)] font-black uppercase leading-[0.96] tracking-[-0.04em]">{value}</dd>
                   </div>
                 ))}
               </dl>
@@ -95,12 +94,12 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
 
         <section id="method" className="border-x border-t border-[var(--line-strong)] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
           <h2 className="max-w-4xl text-[clamp(2.5rem,6vw,5.5rem)] font-black uppercase leading-[0.88] tracking-[-0.06em]">Raw telemetry stays on your machine.</h2>
-          <p className="mt-7 max-w-2xl text-base leading-7 text-[var(--muted)]">The CLI reads local agent logs and uploads aggregate statistics to your private hosted profile. Raw sessions, prompts, files and project paths never leave your machine.</p>
+          <p className="mt-7 max-w-2xl text-base leading-7 text-[var(--muted)]">The CLI uploads aggregate statistics plus a private device label for your device chart. Raw sessions, prompts, files and project paths stay local. Device labels are never published.</p>
           <div className="mt-12 grid gap-px border border-[var(--line-strong)] bg-[var(--line-strong)] md:grid-cols-3">
             {[
               ['Read', 'Parse local Claude Code and Codex usage events.'],
               ['Price', 'Apply model-specific input, output and cache rates.'],
-              ['Sync', 'Upload aggregate totals to your signed-in hosted profile.'],
+              ['Sync', 'Upload aggregate totals and a private device label to your signed-in profile.'],
             ].map(([title, body]) => (
               <article key={title} className="bg-[var(--paper)] p-6 sm:p-8">
                 <h3 className="text-2xl font-black uppercase tracking-[-0.04em]">{title}</h3>

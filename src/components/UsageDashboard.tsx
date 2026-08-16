@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { DateRange, PublicSnapshotDetails, Summary } from '../lib/api';
 import { DailyChart } from './DailyChart';
+import { DeviceChart } from './DeviceChart';
 import { Heatmap } from './Heatmap';
 import { PieSection } from './PieSection';
 import { StatCards } from './StatCards';
@@ -10,9 +11,10 @@ interface UsageDashboardProps {
   details?: PublicSnapshotDetails;
   ownerHandle?: string;
   visibility?: 'totals' | 'details';
+  showDeviceChart?: boolean;
 }
 
-export function UsageDashboard({ summary, details, ownerHandle, visibility }: UsageDashboardProps) {
+export function UsageDashboard({ summary, details, ownerHandle, visibility, showDeviceChart = true }: UsageDashboardProps) {
   const [range, setRange] = useState<DateRange>({});
   const isPublic = Boolean(ownerHandle);
 
@@ -54,6 +56,7 @@ export function UsageDashboard({ summary, details, ownerHandle, visibility }: Us
             defaultGroupBy={isPublic ? details?.history.groupBy ?? 'model' : 'harness'}
             showFullViewport={isPublic}
           />
+          {!isPublic && showDeviceChart ? <DeviceChart range={range} /> : null}
           <PieSection range={range} setRange={setRange} details={details} publishedSnapshot={isPublic} />
           <Heatmap range={isPublic ? undefined : range} entries={isPublic ? details?.heatmap ?? [] : undefined} />
         </div>

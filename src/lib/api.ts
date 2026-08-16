@@ -229,6 +229,17 @@ export interface DateRange {
   to?: string;
 }
 
+export interface DeviceUsage {
+  id: string;
+  name: string;
+  platform: string;
+  architecture: string;
+  last_synced_at: string;
+  cost: number;
+  tokens: number;
+  sessions: number;
+}
+
 export interface UsageBreakdownEntry {
   cost: number;
   sessions: number;
@@ -328,6 +339,7 @@ export const api = {
   getHourly: (range?: DateRange) => fetchJson<HourlyEntry[]>(`/charts/hourly${rangeQs(range)}`),
   getCache: (range?: DateRange) => fetchJson<CacheStats>(`/charts/cache${rangeQs(range)}`),
   getCacheExpiry: (range?: DateRange) => fetchJson<CacheExpiryStats>(`/charts/cache-expiry${rangeQs(range)}`),
+  getDevices: (range?: DateRange) => fetchJson<DeviceUsage[]>(`/charts/devices${rangeQs(range)}`),
   getSources: (range?: DateRange) => fetchJson<Record<string, number>>(`/charts/sources${rangeQs(range)}`),
   getSourceUsage: (range?: DateRange) => fetchJson<UsageBreakdown>(`/charts/source-usage${rangeQs(range)}`),
   getModels: (range?: DateRange) => fetchJson<Record<string, number>>(`/charts/models${rangeQs(range)}`),

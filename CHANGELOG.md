@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-16
+
+### Added
+
+- Added a private, range-aware device usage chart with USD, token and session metrics.
+
+### Changed
+
+- Replaced the duplicate hero logo panel with a full-height telemetry fact grid.
+- Clarified that sync uploads a private device label in addition to aggregates, and that device labels are never published.
+- Limited the fleet chart to hosted private analytics, leaving the local collector dashboard on its existing local data routes.
+
+### Fixed
+
+- Gave the hero installation command enough line height and vertical clearance to prevent clipped glyphs.
+
 ## [0.1.2] - 2026-08-16
 
 ### Fixed

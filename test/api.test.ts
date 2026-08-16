@@ -94,6 +94,7 @@ test('requests range-dependent charts with the selected range', async () => {
     await api.getCache(range);
     await api.getCacheExpiry(range);
     await api.getHeatmap(range);
+    await api.getDevices(range);
 
     assert.deepEqual(requests, [
       '/api/charts/source-usage?from=2026-07-01T10%3A00&to=2026-07-31T23%3A59',
@@ -102,6 +103,7 @@ test('requests range-dependent charts with the selected range', async () => {
       '/api/charts/cache?from=2026-07-01T10%3A00&to=2026-07-31T23%3A59',
       '/api/charts/cache-expiry?from=2026-07-01T10%3A00&to=2026-07-31T23%3A59',
       '/api/charts/heatmap?from=2026-07-01T10%3A00&to=2026-07-31T23%3A59',
+      '/api/charts/devices?from=2026-07-01T10%3A00&to=2026-07-31T23%3A59',
     ]);
   } finally {
     globalThis.fetch = originalFetch;

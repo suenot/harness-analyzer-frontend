@@ -92,7 +92,7 @@ export default function App() {
             <div className="max-w-lg">
               <p className="font-mono text-xs font-bold uppercase tracking-[0.1em] text-[var(--signal)]">Analytics unavailable</p>
               <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-                {isLocal ? 'Start Harness Analyzer on this computer, then retry.' : 'Run "harness-analyzer sync" on your Mac, then retry. Your private analytics are stored on the server only for your signed-in account.'}
+                {isLocal ? 'Start Harness Analyzer on this computer, then retry.' : 'Run "harness-analyzer sync" on each device, then retry. Your private analytics are stored on the server only for your signed-in account.'}
               </p>
               <button type="button" onClick={refetch} className="mt-5 min-h-11 bg-[var(--signal)] px-4 font-mono text-xs font-bold uppercase tracking-[0.1em] text-white hover:bg-[var(--ink)]">
                 Retry
@@ -104,7 +104,7 @@ export default function App() {
             Loading telemetry
           </div>
         ) : (
-          <UsageDashboard key={dataRevision} summary={summary} />
+          <UsageDashboard key={dataRevision} summary={summary} showDeviceChart={!isLocal} />
         )}
       </main>
 

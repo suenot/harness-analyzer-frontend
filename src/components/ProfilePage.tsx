@@ -139,7 +139,7 @@ export function ProfilePage() {
             {form.visibility !== 'private' ? (
               <label className="mt-4 flex min-h-11 cursor-pointer items-start gap-3 border border-[var(--line-strong)] p-3"><input type="checkbox" checked={form.leaderboard_opt_in} onChange={event => { setSaved(false); setForm({ ...form, leaderboard_opt_in: event.target.checked }); }} className="mt-0.5 h-4 w-4 accent-[var(--signal)]" /><span><strong className="block text-xs uppercase tracking-[0.06em]">Include me in Users ranking</strong><span className="mt-1 block text-xs leading-5 text-[var(--muted)]">Your public link works either way. This separate option adds your handle and ranking value to Users.</span></span></label>
             ) : null}
-            <p className="mt-4 border-l-4 border-[var(--signal)] pl-3 text-xs leading-5 text-[var(--muted)]">Public snapshots contain aggregates only. Sessions, prompts, project paths, files and cache incident identities are never included.</p>
+            <p className="mt-4 border-l-4 border-[var(--signal)] pl-3 text-xs leading-5 text-[var(--muted)]">Public snapshots contain aggregates only. Device labels, sessions, prompts, project paths, files and cache incident identities are never included.</p>
           </fieldset>
         </div>
 
@@ -150,8 +150,8 @@ export function ProfilePage() {
       </section>
       <section className="border-2 border-[var(--line-strong)] p-4 sm:p-6">
         <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]">CLI sync</p>
-        <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.04em]">Update from this Mac</h3>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">The hosted site cannot read local Claude or Codex files. Install the CLI, connect it once, then run <code className="font-mono font-bold text-[var(--ink)]">harness-analyzer sync</code>. Only aggregate statistics are uploaded.</p>
+        <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.04em]">Sync every device</h3>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">The hosted site cannot read local Claude or Codex files. Install the CLI on each device, connect each one with the same profile token, then run <code className="font-mono font-bold text-[var(--ink)]">harness-analyzer sync</code> on every machine. Each upload includes aggregate statistics and a private device label, normally the hostname, for your device chart. The label is never published.</p>
         <div className="mt-4 border border-[var(--line-strong)] bg-[var(--paper-deep)] p-3 font-mono text-xs leading-6"><div>{CLI_INSTALL_COMMAND}</div><div>harness-analyzer login</div><div>harness-analyzer sync</div></div>
         {syncToken ? <div className="mt-4"><label htmlFor="sync-token" className="font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Shown once</label><input id="sync-token" readOnly value={syncToken} className="mt-2 min-h-11 w-full border-2 border-[var(--line-strong)] bg-[var(--paper)] px-3 font-mono text-xs" /></div> : null}
         <div className="mt-4 flex flex-wrap gap-2">
