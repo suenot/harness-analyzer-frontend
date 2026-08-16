@@ -30,43 +30,46 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
       ) : null}
 
       <main className="mx-auto max-w-[1440px]">
-        <section className="grid min-h-[calc(100dvh-65px)] border-x border-[var(--line-strong)] lg:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
-          <div className="flex min-w-0 flex-col justify-between p-5 sm:p-8 lg:p-12">
-            <div>
-              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--signal)]">Local usage telemetry</p>
-              <h1 className="mt-7 max-w-5xl text-[clamp(3.5rem,9vw,8.5rem)] font-black uppercase leading-[0.82] tracking-[-0.07em]">
-                Know where your agent budget goes.
-              </h1>
-              <p className="mt-8 max-w-xl text-base leading-7 text-[var(--muted)] md:text-lg">
-                Local cost, token, cache and session analytics for Claude Code and Codex.
-              </p>
-            </div>
-            <a href="#method" className="mt-12 w-fit border-b-2 border-[var(--ink)] pb-1 font-mono text-xs font-bold uppercase tracking-[0.08em] text-[var(--ink)] hover:border-[var(--signal)] hover:text-[var(--signal)]">
-              See the method
-            </a>
-          </div>
+        <section className="flex min-h-[calc(100dvh-65px)] flex-col border-x border-[var(--line-strong)]">
+          <aside aria-labelledby="install-cli-label" className="flex min-w-0 shrink-0 flex-col gap-2 border-b border-[var(--line-strong)] bg-[var(--signal)] px-5 py-5 text-white sm:flex-row sm:items-baseline sm:justify-between sm:gap-6 sm:px-8 lg:px-12 lg:py-6">
+            <p id="install-cli-label" className="shrink-0 font-mono text-xs font-bold uppercase tracking-[0.12em]">Install sync CLI</p>
+            <code className="block max-w-full select-all overflow-x-auto whitespace-nowrap font-mono text-[clamp(0.9rem,4vw,2rem)] font-black leading-none tracking-[-0.04em]">{CLI_INSTALL_COMMAND}</code>
+          </aside>
 
-          <div className="grid min-h-96 border-t border-[var(--line-strong)] bg-[var(--paper-deep)] p-5 lg:border-l lg:border-t-0 lg:p-8">
-            <div className="grid place-items-center border border-[var(--line-strong)] bg-[var(--paper)] p-8">
-              <img src="/harness-analyzer-logo.png" alt="Harness Analyzer mark" className="w-full max-w-64 object-contain mix-blend-multiply" />
+          <div className="grid flex-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
+            <div className="flex min-w-0 flex-col justify-between p-5 sm:p-8 lg:p-12">
+              <div>
+                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--signal)]">Local usage telemetry</p>
+                <h1 className="mt-7 max-w-5xl text-[clamp(3.5rem,9vw,8.5rem)] font-black uppercase leading-[0.82] tracking-[-0.07em]">
+                  Know where your agent budget goes.
+                </h1>
+                <p className="mt-8 max-w-xl text-base leading-7 text-[var(--muted)] md:text-lg">
+                  Local cost, token, cache and session analytics for Claude Code and Codex.
+                </p>
+              </div>
+              <a href="#method" className="mt-12 w-fit border-b-2 border-[var(--ink)] pb-1 font-mono text-xs font-bold uppercase tracking-[0.08em] text-[var(--ink)] hover:border-[var(--signal)] hover:text-[var(--signal)]">
+                See the method
+              </a>
             </div>
-            <div className="border-x border-b border-[var(--line-strong)] bg-[var(--paper)] p-4 sm:p-5">
-              <p className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Install the sync CLI</p>
-              <code className="mt-3 block overflow-x-auto whitespace-nowrap font-mono text-sm font-bold text-[var(--ink)]">{CLI_INSTALL_COMMAND}</code>
+
+            <div className="grid min-h-96 border-t border-[var(--line-strong)] bg-[var(--paper-deep)] p-5 lg:border-l lg:border-t-0 lg:p-8">
+              <div className="grid place-items-center border border-[var(--line-strong)] bg-[var(--paper)] p-8">
+                <img src="/harness-analyzer-logo.png" alt="Harness Analyzer mark" className="w-full max-w-64 object-contain mix-blend-multiply" />
+              </div>
+              <dl className="grid grid-cols-2 border-x border-b border-[var(--line-strong)] bg-[var(--line-strong)]">
+                {[
+                  ['Sources', 'Claude + Codex'],
+                  ['Measures', 'USD + tokens'],
+                  ['Cache TTL', '5m + 1h'],
+                  ['Hosted sync', 'Aggregates only'],
+                ].map(([label, value], index) => (
+                  <div key={label} className={`bg-[var(--paper)] p-4 ${index % 2 === 0 ? 'border-r border-[var(--line-strong)]' : ''} ${index < 2 ? 'border-b border-[var(--line-strong)]' : ''}`}>
+                    <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">{label}</dt>
+                    <dd className="mt-2 text-sm font-black uppercase tracking-[-0.02em]">{value}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
-            <dl className="grid grid-cols-2 border-x border-b border-[var(--line-strong)] bg-[var(--line-strong)]">
-              {[
-                ['Sources', 'Claude + Codex'],
-                ['Measures', 'USD + tokens'],
-                ['Cache TTL', '5m + 1h'],
-                ['Hosted sync', 'Aggregates only'],
-              ].map(([label, value], index) => (
-                <div key={label} className={`bg-[var(--paper)] p-4 ${index % 2 === 0 ? 'border-r border-[var(--line-strong)]' : ''} ${index < 2 ? 'border-b border-[var(--line-strong)]' : ''}`}>
-                  <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">{label}</dt>
-                  <dd className="mt-2 text-sm font-black uppercase tracking-[-0.02em]">{value}</dd>
-                </div>
-              ))}
-            </dl>
           </div>
         </section>
 
