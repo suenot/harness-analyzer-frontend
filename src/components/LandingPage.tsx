@@ -1,4 +1,5 @@
 import type { AuthSession } from '../lib/auth';
+import { CLI_INSTALL_COMMAND } from '../lib/cli';
 import { SiteHeader } from './SiteHeader';
 
 export type LandingAuthStatus = 'checking' | 'anonymous' | 'authenticated' | 'forbidden' | 'error';
@@ -49,12 +50,16 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
             <div className="grid place-items-center border border-[var(--line-strong)] bg-[var(--paper)] p-8">
               <img src="/harness-analyzer-logo.png" alt="Harness Analyzer mark" className="w-full max-w-64 object-contain mix-blend-multiply" />
             </div>
+            <div className="border-x border-b border-[var(--line-strong)] bg-[var(--paper)] p-4 sm:p-5">
+              <p className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Install the sync CLI</p>
+              <code className="mt-3 block overflow-x-auto whitespace-nowrap font-mono text-sm font-bold text-[var(--ink)]">{CLI_INSTALL_COMMAND}</code>
+            </div>
             <dl className="grid grid-cols-2 border-x border-b border-[var(--line-strong)] bg-[var(--line-strong)]">
               {[
                 ['Sources', 'Claude + Codex'],
                 ['Measures', 'USD + tokens'],
                 ['Cache TTL', '5m + 1h'],
-                ['Storage', 'Local only'],
+                ['Hosted sync', 'Aggregates only'],
               ].map(([label, value], index) => (
                 <div key={label} className={`bg-[var(--paper)] p-4 ${index % 2 === 0 ? 'border-r border-[var(--line-strong)]' : ''} ${index < 2 ? 'border-b border-[var(--line-strong)]' : ''}`}>
                   <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">{label}</dt>
@@ -86,13 +91,13 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
         </section>
 
         <section id="method" className="border-x border-t border-[var(--line-strong)] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
-          <h2 className="max-w-4xl text-[clamp(2.5rem,6vw,5.5rem)] font-black uppercase leading-[0.88] tracking-[-0.06em]">Your telemetry stays on your machine.</h2>
-          <p className="mt-7 max-w-2xl text-base leading-7 text-[var(--muted)]">The hosted landing handles identity. Your local API reads agent logs and serves the private dashboard directly to your browser.</p>
+          <h2 className="max-w-4xl text-[clamp(2.5rem,6vw,5.5rem)] font-black uppercase leading-[0.88] tracking-[-0.06em]">Raw telemetry stays on your machine.</h2>
+          <p className="mt-7 max-w-2xl text-base leading-7 text-[var(--muted)]">The CLI reads local agent logs and uploads aggregate statistics to your private hosted profile. Raw sessions, prompts, files and project paths never leave your machine.</p>
           <div className="mt-12 grid gap-px border border-[var(--line-strong)] bg-[var(--line-strong)] md:grid-cols-3">
             {[
               ['Read', 'Parse local Claude Code and Codex usage events.'],
               ['Price', 'Apply model-specific input, output and cache rates.'],
-              ['Explain', 'Turn sessions into charts, ranges and efficiency signals.'],
+              ['Sync', 'Upload aggregate totals to your signed-in hosted profile.'],
             ].map(([title, body]) => (
               <article key={title} className="bg-[var(--paper)] p-6 sm:p-8">
                 <h3 className="text-2xl font-black uppercase tracking-[-0.04em]">{title}</h3>

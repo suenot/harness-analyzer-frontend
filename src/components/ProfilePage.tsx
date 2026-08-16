@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { ApiError, publicApi, type SharingSettings, type SharingVisibility } from '../lib/api';
+import { CLI_INSTALL_COMMAND } from '../lib/cli';
 import { isValidPublicHandle } from '../lib/navigation';
 import { useHarnessAuth } from './AuthGate';
 
@@ -151,7 +152,7 @@ export function ProfilePage() {
         <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]">CLI sync</p>
         <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.04em]">Update from this Mac</h3>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">The hosted site cannot read local Claude or Codex files. Install the CLI, connect it once, then run <code className="font-mono font-bold text-[var(--ink)]">harness-analyzer sync</code>. Only aggregate statistics are uploaded.</p>
-        <div className="mt-4 border border-[var(--line-strong)] bg-[var(--paper-deep)] p-3 font-mono text-xs leading-6"><div>npm install -g harness-analyzer</div><div>harness-analyzer login</div><div>harness-analyzer sync</div></div>
+        <div className="mt-4 border border-[var(--line-strong)] bg-[var(--paper-deep)] p-3 font-mono text-xs leading-6"><div>{CLI_INSTALL_COMMAND}</div><div>harness-analyzer login</div><div>harness-analyzer sync</div></div>
         {syncToken ? <div className="mt-4"><label htmlFor="sync-token" className="font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Shown once</label><input id="sync-token" readOnly value={syncToken} className="mt-2 min-h-11 w-full border-2 border-[var(--line-strong)] bg-[var(--paper)] px-3 font-mono text-xs" /></div> : null}
         <div className="mt-4 flex flex-wrap gap-2">
           <button type="button" onClick={createSyncToken} disabled={syncBusy} className="min-h-11 bg-[var(--signal)] px-4 font-mono text-xs font-bold uppercase text-white disabled:opacity-50">{syncToken ? 'Replace token' : 'Create token'}</button>
