@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApi } from '../hooks/useApi';
-import { ApiError, publicApi, type SharingSettings, type SharingVisibility } from '../lib/api';
+import { publicApi, type SharingSettings, type SharingVisibility } from '../lib/api';
 import { CLI_INSTALL_COMMAND } from '../lib/cli';
 import { isValidPublicHandle } from '../lib/navigation';
 import { useHarnessAuth } from './AuthGate';
@@ -33,6 +33,8 @@ export function ProfilePage() {
     normalizedHandle !== persisted.handle
     || form.visibility !== persisted.visibility
     || form.leaderboard_opt_in !== persisted.leaderboard_opt_in
+    || form.share_sessions !== persisted.share_sessions
+    || form.share_projects !== persisted.share_projects
   ), [form, persisted, normalizedHandle]);
   const canSave = handleValid && !!form && (dirty || form.visibility !== 'private');
 
@@ -46,6 +48,8 @@ export function ProfilePage() {
         handle: normalizedHandle,
         visibility: form.visibility,
         leaderboard_opt_in: form.visibility === 'private' ? false : form.leaderboard_opt_in,
+        share_sessions: form.visibility === 'details' && form.share_sessions,
+        share_projects: form.visibility === 'details' && form.share_projects,
       });
       setForm(next);
       setPersisted(next);
@@ -131,7 +135,7 @@ export function ProfilePage() {
             <div className="mt-3 grid gap-px border-2 border-[var(--line-strong)] bg-[var(--line-strong)]">
               {OPTIONS.map(option => (
                 <label key={option.value} className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-3 bg-[var(--paper)] p-4 hover:bg-[var(--paper-soft)]">
-                  <input type="radio" name="sharing" value={option.value} checked={form.visibility === option.value} onChange={() => { setSaved(false); setForm({ ...form, visibility: option.value, leaderboard_opt_in: option.value === 'private' ? false : form.leaderboard_opt_in }); }} className="mt-1 h-4 w-4 accent-[var(--signal)]" />
+                  <input type="radio" name="sharing" value={option.value} checked={form.visibility === option.value} onChange={() => { setSaved(false); setForm({ ...form, visibility: option.value, leaderboard_opt_in: option.value === 'private' ? false : form.leaderboard_opt_in, share_sessions: option.value === 'details' ? form.share_sessions : false, share_projects: option.value === 'details' ? form.share_projects : false }); }} className="mt-1 h-4 w-4 accent-[var(--signal)]" />
                   <span><strong className="block text-sm font-black uppercase tracking-[0.04em]">{option.title}</strong><span className="mt-1 block text-xs leading-5 text-[var(--muted)]">{option.body}</span></span>
                 </label>
               ))}
@@ -139,7 +143,21 @@ export function ProfilePage() {
             {form.visibility !== 'private' ? (
               <label className="mt-4 flex min-h-11 cursor-pointer items-start gap-3 border border-[var(--line-strong)] p-3"><input type="checkbox" checked={form.leaderboard_opt_in} onChange={event => { setSaved(false); setForm({ ...form, leaderboard_opt_in: event.target.checked }); }} className="mt-0.5 h-4 w-4 accent-[var(--signal)]" /><span><strong className="block text-xs uppercase tracking-[0.06em]">Include me in Users ranking</strong><span className="mt-1 block text-xs leading-5 text-[var(--muted)]">Your public link works either way. This separate option adds your handle and ranking value to Users.</span></span></label>
             ) : null}
-            <p className="mt-4 border-l-4 border-[var(--signal)] pl-3 text-xs leading-5 text-[var(--muted)]">Public snapshots contain aggregates only. Device labels, sessions, prompts, project paths, files and cache incident identities are never included.</p>
+            <fieldset className={`mt-4 border border-[var(--line-strong)] p-3 ${form.visibility === 'details' ? '' : 'opacity-55'}`}>
+              <legend className="px-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Public pages</legend>
+              <p className="text-xs leading-5 text-[var(--muted)]">Choose which detailed pages visitors can open. Totals + details is required.</p>
+              <div className="mt-3 grid gap-px border border-[var(--line-strong)] bg-[var(--line-strong)] sm:grid-cols-2">
+                <label className={`flex min-h-16 items-start gap-3 bg-[var(--paper)] p-3 ${form.visibility === 'details' ? 'cursor-pointer hover:bg-[var(--paper-soft)]' : 'cursor-not-allowed'}`}>
+                  <input type="checkbox" checked={form.share_sessions} disabled={form.visibility !== 'details'} onChange={event => { setSaved(false); setForm({ ...form, share_sessions: event.target.checked }); }} className="mt-0.5 h-4 w-4 accent-[var(--signal)]" />
+                  <span><strong className="block text-xs uppercase tracking-[0.06em]">Sessions page</strong><span className="mt-1 block text-xs leading-5 text-[var(--muted)]">Share source, model, time, tokens and cost. This page never includes prompts or project labels.</span></span>
+                </label>
+                <label className={`flex min-h-16 items-start gap-3 bg-[var(--paper)] p-3 ${form.visibility === 'details' ? 'cursor-pointer hover:bg-[var(--paper-soft)]' : 'cursor-not-allowed'}`}>
+                  <input type="checkbox" checked={form.share_projects} disabled={form.visibility !== 'details'} onChange={event => { setSaved(false); setForm({ ...form, share_projects: event.target.checked }); }} className="mt-0.5 h-4 w-4 accent-[var(--signal)]" />
+                  <span><strong className="block text-xs uppercase tracking-[0.06em]">Projects page</strong><span className="mt-1 block text-xs leading-5 text-[var(--muted)]">Share project labels and aggregate model and harness usage.</span></span>
+                </label>
+              </div>
+            </fieldset>
+            <p className="mt-4 border-l-4 border-[var(--signal)] pl-3 text-xs leading-5 text-[var(--muted)]">Public dashboard snapshots contain aggregates only. Shared pages use sanitized fields and short project labels. Prompts, full paths, files, internal IDs and device labels are never included.</p>
           </fieldset>
         </div>
 

@@ -13,6 +13,12 @@ interface SiteHeaderProps {
   activeTab?: UserTab;
   profileActive?: boolean;
   publicOnly?: boolean;
+  publicUserNavigation?: {
+    handle: string;
+    activeTab: UserTab;
+    shareSessions: boolean;
+    shareProjects: boolean;
+  };
   userHandle?: string | null;
   authStatus?: 'checking' | 'anonymous' | 'authenticated' | 'forbidden' | 'error';
   onSignIn?: () => void;
@@ -26,6 +32,7 @@ export function SiteHeader({
   activeTab,
   profileActive,
   publicOnly = false,
+  publicUserNavigation,
   userHandle,
   authStatus,
   onSignIn,
@@ -33,6 +40,12 @@ export function SiteHeader({
   onRefresh,
   refreshing,
 }: SiteHeaderProps) {
+  const visibleUserTabs = publicOnly
+    ? userTabs.filter(tab => Boolean(publicUserNavigation) && (tab === 'dashboard'
+      || (tab === 'sessions' && publicUserNavigation?.shareSessions)
+      || (tab === 'projects' && publicUserNavigation?.shareProjects)))
+    : userTabs;
+
   return (
     <header className="app-header">
       <div className="mx-auto grid min-h-16 max-w-[1440px] grid-cols-[minmax(0,1fr)_auto] items-stretch lg:grid-cols-[auto_minmax(0,1fr)_auto]">
@@ -45,13 +58,15 @@ export function SiteHeader({
         </a>
 
         <nav aria-label="Primary navigation" className="app-nav">
-          <div className={`grid h-full ${publicOnly ? 'grid-cols-1' : 'grid-cols-4'} md:flex md:justify-end`}>
-            {!publicOnly && userTabs.map(tab => (
+          <div className="grid h-full md:flex md:justify-end" style={{ gridTemplateColumns: `repeat(${visibleUserTabs.length + 1}, minmax(0, 1fr))` }}>
+            {visibleUserTabs.map(tab => (
               <a
                 key={tab}
-                href={userHandle ? pathForUserTab(userHandle, tab) : pathForTab(tab)}
+                href={publicOnly && publicUserNavigation
+                  ? pathForUserTab(publicUserNavigation.handle, tab)
+                  : userHandle ? pathForUserTab(userHandle, tab) : pathForTab(tab)}
                 onClick={event => onNavigateTab?.(event, tab)}
-                aria-current={activeTab === tab ? 'page' : undefined}
+                aria-current={(publicOnly ? publicUserNavigation?.activeTab : activeTab) === tab ? 'page' : undefined}
                 className="app-nav-link"
               >
                 {tabLabels[tab]}

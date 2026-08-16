@@ -26,3 +26,23 @@ test('uses user-scoped navigation and a single email profile link', () => {
   assert.match(html, />suenot@gmail\.com<\/a>/);
   assert.doesNotMatch(html, />Profile<\/a>/);
 });
+
+test('shows only public pages enabled by the profile owner', () => {
+  const html = renderToStaticMarkup(createElement(SiteHeader, {
+    session: null,
+    publicOnly: true,
+    authStatus: 'anonymous',
+    publicUserNavigation: {
+      handle: 'mark-1',
+      activeTab: 'sessions',
+      shareSessions: true,
+      shareProjects: false,
+    },
+  }));
+
+  assert.match(html, /href="\/u\/mark-1"/);
+  assert.match(html, /href="\/u\/mark-1\/sessions"/);
+  assert.match(html, /href="\/u\/mark-1\/sessions" aria-current="page"/);
+  assert.doesNotMatch(html, /href="\/u\/mark-1\/projects"/);
+  assert.match(html, /href="\/users"/);
+});

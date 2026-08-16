@@ -23,22 +23,51 @@ test('collects data through the backend POST endpoint', async () => {
   }
 });
 
-test('uses the central public registry and encodes handles and leaderboard options', async () => {
+test('uses the central public registry for profiles, shared pages and leaderboard options', async () => {
   const originalFetch = globalThis.fetch;
   const requests: Array<string | URL | Request> = [];
   globalThis.fetch = async input => {
     requests.push(input);
-    return Response.json(input.toString().includes('leaderboard')
-      ? { metric: 'tokens', users: [] }
-      : { handle: 'mark-1', display_name: 'Mark', visibility: 'totals', snapshot: {} });
+    const url = input.toString();
+    if (url.includes('leaderboard')) return Response.json({ metric: 'tokens', users: [] });
+    if (url.includes('/sessions')) return Response.json({ total: 0, sessions: [] });
+    if (url.includes('/projects')) return Response.json([]);
+    return Response.json({ handle: 'mark-1', display_name: 'Mark', visibility: 'details', share_sessions: true, share_projects: true, snapshot: {} });
   };
   try {
     await publicApi.getUser('mark-1');
+    await publicApi.getUserSessions('mark-1', { limit: '20', source: 'codex' });
+    await publicApi.getUserProjects('mark-1');
     await publicApi.getLeaderboard('tokens', 25);
     assert.deepEqual(requests, [
       'https://harness-analyzer-api.marketmaker.cc/api/public/users/mark-1',
+      'https://harness-analyzer-api.marketmaker.cc/api/public/users/mark-1/sessions?limit=20&source=codex',
+      'https://harness-analyzer-api.marketmaker.cc/api/public/users/mark-1/projects',
       'https://harness-analyzer-api.marketmaker.cc/api/public/leaderboard?metric=tokens&limit=25',
     ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('updates independent public page settings', async () => {
+  const originalFetch = globalThis.fetch;
+  let body = '';
+  globalThis.fetch = async (_input, init) => {
+    body = String(init?.body);
+    return Response.json({
+      handle: 'mark-1',
+      display_name: 'Mark',
+      visibility: 'details',
+      leaderboard_opt_in: false,
+      share_sessions: true,
+      share_projects: false,
+      snapshot_generated_at: null,
+    });
+  };
+  try {
+    await publicApi.updateSharing({ visibility: 'details', share_sessions: true, share_projects: false });
+    assert.deepEqual(JSON.parse(body), { visibility: 'details', share_sessions: true, share_projects: false });
   } finally {
     globalThis.fetch = originalFetch;
   }

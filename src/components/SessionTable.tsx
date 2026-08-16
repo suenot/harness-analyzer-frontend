@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi';
-import { api, type Session } from '../lib/api';
+import { api, publicApi, type PublicSession, type PublicSessionsResponse, type Session, type SessionsResponse } from '../lib/api';
 
 const paper = '#F4F4F0';
 const ink = '#111111';
@@ -25,6 +25,10 @@ export function sessionKey(session: Session, index: number): string {
     session.model,
     index,
   ].join(':');
+}
+
+export function publicSessionKey(session: PublicSession, index: number): string {
+  return [session.date, session.time, session.source, session.model, index].join(':');
 }
 
 function ModelName({ model }: { model: string }) {
@@ -115,6 +119,26 @@ function SessionCard({ session, historyId, expanded, onToggle }: {
   );
 }
 
+function PublicSessionCard({ session }: { session: PublicSession }) {
+  return (
+    <article className="border-2" style={{ borderColor: line, background: paper }}>
+      <div className="flex items-start justify-between gap-3 border-b p-3" style={{ borderColor: line }}>
+        <div className="min-w-0">
+          <p className="font-mono text-[10px] font-bold tracking-[0.12em]" style={{ color: red }}>{session.date} / {session.time}</p>
+          <h3 className="mt-1 break-words text-base font-bold leading-5" style={{ color: ink }}><ModelName model={session.model} /></h3>
+        </div>
+        <p className="shrink-0 font-mono text-sm font-bold tabular-nums" style={{ color: red }}>${session.cost.toFixed(2)}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-px" style={{ background: line }}>
+        <div className="p-3" style={{ background: paper }}><p className="font-mono text-[10px] font-bold tracking-[0.1em]" style={{ color: muted }}>HARNESS</p><p className="mt-1 truncate text-sm font-semibold" style={{ color: ink }}>{session.source || 'Unknown'}</p></div>
+        <div className="p-3 text-right" style={{ background: paper }}><p className="font-mono text-[10px] font-bold tracking-[0.1em]" style={{ color: muted }}>INPUT</p><p className="mt-1 font-mono text-sm font-bold tabular-nums" style={{ color: ink }}>{formatTokens(session.input_tokens)}</p></div>
+        <div className="p-3" style={{ background: paper }}><p className="font-mono text-[10px] font-bold tracking-[0.1em]" style={{ color: muted }}>OUTPUT</p><p className="mt-1 font-mono text-sm font-bold tabular-nums" style={{ color: ink }}>{formatTokens(session.output_tokens)}</p></div>
+        <div className="p-3 text-right" style={{ background: paper }}><p className="font-mono text-[10px] font-bold tracking-[0.1em]" style={{ color: muted }}>CACHE READ</p><p className="mt-1 font-mono text-sm font-bold tabular-nums" style={{ color: ink }}>{formatTokens(session.cache_read)}</p></div>
+      </div>
+    </article>
+  );
+}
+
 function SessionDesktopRow({ session, historyId, expanded, onToggle }: {
   session: Session;
   historyId: string;
@@ -153,6 +177,19 @@ function SessionDesktopRow({ session, historyId, expanded, onToggle }: {
   );
 }
 
+function PublicSessionDesktopRow({ session }: { session: PublicSession }) {
+  return (
+    <tr className="border-b" style={{ borderColor: line, background: paper }}>
+      <td className="p-3 font-mono text-[11px] tabular-nums" style={{ color: muted }}>{session.date}<br />{session.time}</td>
+      <td className="p-3 text-sm font-semibold" style={{ color: ink }}>{session.source || 'Unknown'}</td>
+      <td className="p-3 text-sm" style={{ color: ink }}><ModelName model={session.model} /></td>
+      <td className="p-3 text-right font-mono text-xs tabular-nums" style={{ color: ink }}>{formatTokens(session.input_tokens)}</td>
+      <td className="p-3 text-right font-mono text-xs tabular-nums" style={{ color: ink }}>{formatTokens(session.output_tokens)}</td>
+      <td className="p-3 text-right font-mono text-xs font-bold tabular-nums" style={{ color: red }}>${session.cost.toFixed(2)}</td>
+    </tr>
+  );
+}
+
 function SessionLoading() {
   return (
     <div className="border-2 p-4 sm:p-6" aria-label="Loading sessions" aria-busy="true" style={{ borderColor: line, background: paper }}>
@@ -164,34 +201,41 @@ function SessionLoading() {
   );
 }
 
-export function SessionTable() {
+export function SessionTable({ publicHandle }: { publicHandle?: string }) {
   const [limit, setLimit] = useState('50');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const { data, loading, error, refetch } = useApi(() => api.getSessions({ limit }), [limit]);
+  const publicView = Boolean(publicHandle);
+  const { data, loading, error, refetch } = useApi<SessionsResponse | PublicSessionsResponse>(
+    () => publicHandle ? publicApi.getUserSessions(publicHandle, { limit }) : api.getSessions({ limit }),
+    [limit, publicHandle],
+  );
 
   if (loading && !data) return <SessionLoading />;
 
   if (error && !data) {
     return (
       <section className="border-2 p-5 sm:p-8" style={{ borderColor: line, background: paper }}>
-        <p className="font-mono text-[10px] font-bold tracking-[0.12em]" style={{ color: red }}>SESSIONS / ERROR</p>
-        <h2 className="mt-2 text-2xl font-bold" style={{ color: ink }}>Session log is unavailable.</h2>
+        <p className="font-mono text-[10px] font-bold tracking-[0.12em]" style={{ color: red }}>{publicView ? `@${publicHandle} / SESSIONS` : 'SESSIONS / ERROR'}</p>
+        <h2 className="mt-2 text-2xl font-bold" style={{ color: ink }}>{publicView ? 'Shared sessions are unavailable.' : 'Session log is unavailable.'}</h2>
         <button type="button" onClick={refetch} className="mt-6 min-h-11 border-2 px-4 font-mono text-xs font-bold tracking-[0.1em] focus-visible:outline-2 focus-visible:outline-offset-2" style={{ borderColor: line, color: ink, outlineColor: red }}>RETRY</button>
       </section>
     );
   }
 
   if (!data) return null;
+  const publicSessions = publicView ? (data as PublicSessionsResponse).sessions : [];
+  const privateSessions = publicView ? [] : (data as SessionsResponse).sessions;
 
   return (
     <section aria-labelledby="sessions-heading" className="border-2" style={{ borderColor: line, background: paper, color: ink }}>
       <header className="grid gap-px border-b sm:grid-cols-[minmax(0,1fr)_auto]" style={{ borderColor: line, background: line }}>
         <div className="p-4 sm:p-6" style={{ background: paper }}>
-          <p className="font-mono text-[10px] font-bold tracking-[0.14em]" style={{ color: red }}>SESSIONS / LOG</p>
+          <p className="font-mono text-[10px] font-bold tracking-[0.14em]" style={{ color: red }}>{publicView ? `@${publicHandle} / SESSIONS` : 'SESSIONS / LOG'}</p>
           <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-            <h2 id="sessions-heading" className="text-3xl font-black uppercase leading-none tracking-[-0.05em] sm:text-5xl">Session archive</h2>
+            <h2 id="sessions-heading" className="text-3xl font-black uppercase leading-none tracking-[-0.05em] sm:text-5xl">{publicView ? 'Shared sessions' : 'Session archive'}</h2>
             <p className="font-mono text-xs font-bold tabular-nums" style={{ color: muted }}>{data.total.toLocaleString('en-US')} TOTAL</p>
           </div>
+          {publicView ? <p className="mt-3 max-w-2xl text-xs leading-5" style={{ color: muted }}>Source, model, time, tokens and cost are public. Prompts, titles, files, projects and internal IDs stay private.</p> : null}
         </div>
         <label className="flex min-h-11 items-center gap-3 p-3 font-mono text-[10px] font-bold tracking-[0.1em] sm:p-4" style={{ background: soft, color: ink }}>
           LIMIT
@@ -204,28 +248,36 @@ export function SessionTable() {
         </label>
       </header>
 
-      <div className="space-y-3 p-3 md:hidden">
-        {data.sessions.map((session, index) => {
-          const id = sessionKey(session, index);
-          return <SessionCard key={id} session={session} historyId={`session-history-mobile-${index}`} expanded={expandedId === id} onToggle={() => setExpandedId(current => current === id ? null : id)} />;
-        })}
-      </div>
-
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[52rem] border-collapse">
-          <thead>
-            <tr className="border-b-2" style={{ borderColor: line, background: soft }}>
-              {['Date / time', 'Harness', 'Model', 'Input', 'Output', 'Cost', 'Title', 'History'].map(label => <th key={label} scope="col" className="p-3 text-left font-mono text-[10px] font-bold uppercase tracking-[0.1em] last:text-right" style={{ color: ink }}>{label}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {data.sessions.map((session, index) => {
+      {data.sessions.length === 0 ? (
+        <div className="p-5 text-sm" style={{ color: muted }}>{publicView ? 'No shared sessions in this range.' : 'No sessions recorded in this range.'}</div>
+      ) : (
+        <>
+          <div className="space-y-3 p-3 md:hidden">
+            {publicView ? publicSessions.map((session, index) => <PublicSessionCard key={publicSessionKey(session, index)} session={session} />) : privateSessions.map((session, index) => {
               const id = sessionKey(session, index);
-              return <SessionDesktopRow key={id} session={session} historyId={`session-history-desktop-${index}`} expanded={expandedId === id} onToggle={() => setExpandedId(current => current === id ? null : id)} />;
+              return <SessionCard key={id} session={session} historyId={`session-history-mobile-${index}`} expanded={expandedId === id} onToggle={() => setExpandedId(current => current === id ? null : id)} />;
             })}
-          </tbody>
-        </table>
-      </div>
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[52rem] border-collapse">
+              <thead>
+                <tr className="border-b-2" style={{ borderColor: line, background: soft }}>
+                  {(publicView ? ['Date / time', 'Harness', 'Model', 'Input', 'Output', 'Cost'] : ['Date / time', 'Harness', 'Model', 'Input', 'Output', 'Cost', 'Title', 'History']).map(label => <th key={label} scope="col" className="p-3 text-left font-mono text-[10px] font-bold uppercase tracking-[0.1em] last:text-right" style={{ color: ink }}>{label}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {publicView
+                  ? publicSessions.map((session, index) => <PublicSessionDesktopRow key={publicSessionKey(session, index)} session={session} />)
+                  : privateSessions.map((session, index) => {
+                    const id = sessionKey(session, index);
+                    return <SessionDesktopRow key={id} session={session} historyId={`session-history-desktop-${index}`} expanded={expandedId === id} onToggle={() => setExpandedId(current => current === id ? null : id)} />;
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </section>
   );
 }

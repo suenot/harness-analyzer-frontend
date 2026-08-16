@@ -25,12 +25,24 @@ export async function saveSharingSettings(
 ): Promise<SharingSettings> {
   const handle = desired.handle.trim().toLowerCase();
   if (desired.visibility === 'private') {
-    return clients.updateSharing({ handle, visibility: 'private', leaderboard_opt_in: false });
+    return clients.updateSharing({
+      handle,
+      visibility: 'private',
+      leaderboard_opt_in: false,
+      share_sessions: false,
+      share_projects: false,
+    });
   }
 
   let reserved: SharingSettings;
   try {
-    reserved = await clients.updateSharing({ handle, visibility: 'private', leaderboard_opt_in: false });
+    reserved = await clients.updateSharing({
+      handle,
+      visibility: 'private',
+      leaderboard_opt_in: false,
+      share_sessions: false,
+      share_projects: false,
+    });
   } catch (cause) {
     throw new SharingPublicationError('reserve', null, cause);
   }
@@ -51,6 +63,8 @@ export async function saveSharingSettings(
       handle,
       visibility: desired.visibility,
       leaderboard_opt_in: desired.leaderboard_opt_in,
+      share_sessions: desired.visibility === 'details' && desired.share_sessions,
+      share_projects: desired.visibility === 'details' && desired.share_projects,
     });
   } catch (cause) {
     throw new SharingPublicationError('publish', reserved, cause);

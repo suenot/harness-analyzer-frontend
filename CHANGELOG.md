@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-16
+
+### Added
+
+- Added independent profile controls for sharing sanitized Sessions and Projects pages.
+- Added public Sessions and Projects routes with profile-scoped navigation and explicit not-shared states.
+
+### Changed
+
+- Introduced separate public data types so session prompts, titles, files, project links and internal IDs cannot enter shared page components.
+- Limited shared project presentation to short labels and aggregate model and harness breakdowns.
+
 ## [0.2.0] - 2026-08-16
 
 ### Added

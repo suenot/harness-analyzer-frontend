@@ -73,6 +73,23 @@ export interface SessionsResponse {
   sessions: Session[];
 }
 
+export interface PublicSession {
+  date: string;
+  time: string;
+  source: string;
+  cost: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read: number;
+  cache_write: number;
+  model: string;
+}
+
+export interface PublicSessionsResponse {
+  total: number;
+  sessions: PublicSession[];
+}
+
 export interface DailyChartEntry {
   date: string;
   sources: Record<string, number>;
@@ -205,6 +222,17 @@ export interface ProjectEntry {
   byHarness: Record<string, ProjectBreakdownEntry>;
 }
 
+export interface PublicProjectEntry {
+  label: string;
+  cost: number;
+  tokens: number;
+  sessions: number;
+  sources: string[];
+  models: string[];
+  byModel: Record<string, ProjectBreakdownEntry>;
+  byHarness: Record<string, ProjectBreakdownEntry>;
+}
+
 export interface ModelPrice {
   id: string;
   name: string;
@@ -255,6 +283,8 @@ export interface SharingSettings {
   display_name: string;
   visibility: SharingVisibility;
   leaderboard_opt_in: boolean;
+  share_sessions: boolean;
+  share_projects: boolean;
   snapshot_generated_at: string | null;
 }
 
@@ -295,6 +325,8 @@ export interface PublicUserProfile {
   handle: string;
   display_name: string;
   visibility: Exclude<SharingVisibility, 'private'>;
+  share_sessions: boolean;
+  share_projects: boolean;
   snapshot: PublicSnapshotV1;
 }
 
@@ -355,7 +387,7 @@ export const api = {
 
 export const publicApi = {
   getSharing: () => fetchJsonAt<SharingSettings>(PUBLIC_BASE, '/me/sharing'),
-  updateSharing: (settings: Partial<Pick<SharingSettings, 'handle' | 'display_name' | 'visibility' | 'leaderboard_opt_in'>>) => (
+  updateSharing: (settings: Partial<Pick<SharingSettings, 'handle' | 'display_name' | 'visibility' | 'leaderboard_opt_in' | 'share_sessions' | 'share_projects'>>) => (
     fetchJsonAt<SharingSettings>(PUBLIC_BASE, '/me/sharing', {
       method: 'PUT',
       body: JSON.stringify(settings),
@@ -375,6 +407,13 @@ export const publicApi = {
   ),
   getUser: (handle: string) => (
     fetchJsonAt<PublicUserProfile>(PUBLIC_BASE, `/public/users/${encodeURIComponent(handle)}`)
+  ),
+  getUserSessions: (handle: string, params?: Record<string, string>) => {
+    const query = params ? new URLSearchParams(params).toString() : '';
+    return fetchJsonAt<PublicSessionsResponse>(PUBLIC_BASE, `/public/users/${encodeURIComponent(handle)}/sessions${query ? `?${query}` : ''}`);
+  },
+  getUserProjects: (handle: string) => (
+    fetchJsonAt<PublicProjectEntry[]>(PUBLIC_BASE, `/public/users/${encodeURIComponent(handle)}/projects`)
   ),
   getLeaderboard: (metric: LeaderboardMetric, limit = 50) => {
     const qs = new URLSearchParams({ metric, limit: String(limit) });

@@ -5,7 +5,8 @@ import type { PublicSnapshotV1, SharingSettings } from '../src/lib/api.ts';
 import { saveSharingSettings, SharingPublicationError } from '../src/lib/sharing.ts';
 
 const privateSettings: SharingSettings = {
-  handle: 'suenot', display_name: 'Suenot', visibility: 'private', leaderboard_opt_in: false, snapshot_generated_at: null,
+  handle: 'suenot', display_name: 'Suenot', visibility: 'private', leaderboard_opt_in: false,
+  share_sessions: false, share_projects: false, snapshot_generated_at: null,
 };
 const snapshot: PublicSnapshotV1 = {
   schema_version: 1,
@@ -19,16 +20,16 @@ const snapshot: PublicSnapshotV1 = {
 
 test('publishes only after reserving the handle privately and uploading a sanitized snapshot', async () => {
   const calls: string[] = [];
-  const desired: SharingSettings = { ...privateSettings, visibility: 'details', leaderboard_opt_in: true };
+  const desired: SharingSettings = { ...privateSettings, visibility: 'details', leaderboard_opt_in: true, share_sessions: true };
   const result = await saveSharingSettings(desired, {
     updateSharing: async update => {
-      calls.push(`sharing:${update.visibility}:${String(update.leaderboard_opt_in)}`);
+      calls.push(`sharing:${update.visibility}:${String(update.leaderboard_opt_in)}:${String(update.share_sessions)}:${String(update.share_projects)}`);
       return { ...privateSettings, ...update };
     },
     exportSnapshot: async level => { calls.push(`export:${level}`); return snapshot; },
     publishSnapshot: async value => { calls.push(`snapshot:${value.schema_version}`); },
   });
-  assert.deepEqual(calls, ['sharing:private:false', 'export:details', 'snapshot:1', 'sharing:details:true']);
+  assert.deepEqual(calls, ['sharing:private:false:false:false', 'export:details', 'snapshot:1', 'sharing:details:true:true:false']);
   assert.equal(result.visibility, 'details');
 });
 
@@ -55,6 +56,17 @@ test('private settings never read or upload local telemetry', async () => {
     publishSnapshot: async () => { calls.push('snapshot'); },
   });
   assert.deepEqual(calls, ['sharing:private']);
+});
+
+test('totals visibility clears detailed public page flags', async () => {
+  const updates: Array<Partial<SharingSettings>> = [];
+  await saveSharingSettings({ ...privateSettings, visibility: 'totals', share_sessions: true, share_projects: true }, {
+    updateSharing: async update => { updates.push(update); return { ...privateSettings, ...update }; },
+    exportSnapshot: async () => snapshot,
+    publishSnapshot: async () => {},
+  });
+  assert.equal(updates.at(-1)?.share_sessions, false);
+  assert.equal(updates.at(-1)?.share_projects, false);
 });
 
 test('refreshes an unchanged public snapshot through the same safe private reservation', async () => {

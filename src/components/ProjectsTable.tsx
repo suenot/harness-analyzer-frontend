@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useApi } from '../hooks/useApi';
-import { api, type ProjectEntry } from '../lib/api';
+import { api, publicApi, type ProjectEntry, type PublicProjectEntry } from '../lib/api';
 import {
   formatCompactProjectMetric,
   formatProjectMetric,
@@ -35,10 +35,12 @@ function DataCell({ label, value, emphasis = false }: { label: string; value: st
 
 function ProjectSummaryCard({
   project,
+  publicView,
   expanded,
   onToggle,
 }: {
   project: ProjectEntry;
+  publicView: boolean;
   expanded: boolean;
   onToggle: () => void;
 }) {
@@ -70,9 +72,7 @@ function ProjectSummaryCard({
                   <span className="mt-1 block break-words text-xl font-black leading-none tracking-[-0.045em] text-[#111111] [overflow-wrap:anywhere] sm:text-2xl">
                     {projectLabel(project.cwd)}
                   </span>
-                  <span className="mt-3 block break-words font-mono text-[11px] leading-4 text-[#66645F] [overflow-wrap:anywhere]">
-                    {project.cwd || '(no project path)'}
-                  </span>
+                  {!publicView ? <span className="mt-3 block break-words font-mono text-[11px] leading-4 text-[#66645F] [overflow-wrap:anywhere]">{project.cwd || '(no project path)'}</span> : null}
                 </span>
               </div>
               <div className="mt-4 flex min-h-6 flex-wrap gap-1.5 border-t border-[#1B1B1B] pt-3">
@@ -122,10 +122,29 @@ function ProjectsLoading() {
 
 interface ProjectsTableProps {
   refreshKey?: number;
+  publicHandle?: string;
 }
 
-export function ProjectsTable({ refreshKey = 0 }: ProjectsTableProps) {
-  const { data, loading, error, refetch } = useApi(() => api.getProjects(), [refreshKey]);
+export function ProjectsTable({ refreshKey = 0, publicHandle }: ProjectsTableProps) {
+  const publicView = Boolean(publicHandle);
+  const { data: response, loading, error, refetch } = useApi<ProjectEntry[] | PublicProjectEntry[]>(
+    () => publicHandle ? publicApi.getUserProjects(publicHandle) : api.getProjects(),
+    [refreshKey, publicHandle],
+  );
+  const data = useMemo<ProjectEntry[] | null>(() => {
+    if (!response) return null;
+    if (!publicView) return response as ProjectEntry[];
+    return (response as PublicProjectEntry[]).map(project => ({
+      cwd: project.label,
+      cost: project.cost,
+      tokens: project.tokens,
+      sessions: project.sessions,
+      sources: project.sources,
+      models: project.models,
+      byModel: project.byModel,
+      byHarness: project.byHarness,
+    }));
+  }, [publicView, response]);
   const [expandedCwd, setExpandedCwd] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<ProjectSort>('cost');
@@ -161,8 +180,8 @@ export function ProjectsTable({ refreshKey = 0 }: ProjectsTableProps) {
         <header className="border-t-[3px] border-[#111111] pt-3">
           <div className="flex items-start justify-between gap-4 border-b border-[#1B1B1B] pb-5">
             <div>
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#BC1010]">Harness analyzer / project register</p>
-              <h2 id="projects-heading" className="mt-2 text-[clamp(3rem,15vw,8.5rem)] font-black uppercase leading-[0.78] tracking-[-0.075em] text-[#111111]">Projects</h2>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#BC1010]">{publicView ? `@${publicHandle} / shared projects` : 'Harness analyzer / project register'}</p>
+              <h2 id="projects-heading" className="mt-2 text-[clamp(3rem,15vw,8.5rem)] font-black uppercase leading-[0.78] tracking-[-0.075em] text-[#111111]">{publicView ? 'Shared projects' : 'Projects'}</h2>
             </div>
             {!loading && data && (
               <p className="border border-[#1B1B1B] px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[#111111]">
@@ -174,7 +193,7 @@ export function ProjectsTable({ refreshKey = 0 }: ProjectsTableProps) {
 
         <section aria-labelledby="projects-heading" className="border-b border-[#1B1B1B]">
           <div className="min-w-0 py-5 lg:py-7">
-            <p className="max-w-xl text-sm leading-6 text-[#66645F]">Cost, token volume, model mix and harness mix for every recorded working directory.</p>
+            <p className="max-w-xl text-sm leading-6 text-[#66645F]">{publicView ? 'Public project labels with aggregate cost, token volume, model mix and harness mix. Full paths stay private.' : 'Cost, token volume, model mix and harness mix for every recorded working directory.'}</p>
             <dl className="mt-6 border-l border-t border-[#1B1B1B]">
               <div className="min-w-0 border-b border-r border-[#1B1B1B] p-3">
                 <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[#66645F]">Projects</dt>
@@ -216,7 +235,7 @@ export function ProjectsTable({ refreshKey = 0 }: ProjectsTableProps) {
                 type="search"
                 value={query}
                 onChange={event => setQuery(event.target.value)}
-                placeholder="Search path, model or harness"
+                placeholder={publicView ? 'Search label, model or harness' : 'Search path, model or harness'}
                 className="min-h-11 w-full appearance-none bg-transparent px-3 pr-12 font-mono text-sm text-[#111111] outline-none placeholder:text-[#66645F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#BC1010]"
               />
               {query && (
@@ -248,7 +267,7 @@ export function ProjectsTable({ refreshKey = 0 }: ProjectsTableProps) {
             ) : (
               <ul className="space-y-3 sm:space-y-4" aria-label="Projects">
                 {visibleProjects.map(project => (
-                  <ProjectSummaryCard key={project.cwd} project={project} expanded={expandedCwd === project.cwd} onToggle={() => setExpandedCwd(current => current === project.cwd ? null : project.cwd)} />
+                  <ProjectSummaryCard key={project.cwd} project={project} publicView={publicView} expanded={expandedCwd === project.cwd} onToggle={() => setExpandedCwd(current => current === project.cwd ? null : project.cwd)} />
                 ))}
               </ul>
             )}

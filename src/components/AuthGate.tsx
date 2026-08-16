@@ -8,7 +8,7 @@ import {
   safeInternalPath,
   type AuthSession,
 } from '../lib/auth';
-import { canonicalUserPath, isOwnUserHandle, isValidPublicHandle, parseRoute, pathForPublicProfile, routeKindFromPath } from '../lib/navigation';
+import { canonicalUserPath, isOwnUserHandle, isValidPublicHandle, parseRoute, routeKindFromPath } from '../lib/navigation';
 import { LeaderboardPage } from './LeaderboardPage';
 import { LandingPage, type LandingAuthStatus } from './LandingPage';
 import { PublicProfilePage } from './PublicProfilePage';
@@ -215,19 +215,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if (canOpenOwnDashboard) {
       return <HarnessAuthContext.Provider value={{ session, logout, ownHandle, updateOwnHandle: setOwnHandle }}>{children}</HarnessAuthContext.Provider>;
     }
-    if (route.tab !== 'dashboard') {
-      return (
-        <PublicShell auth={publicAuth}>
-          <PublicState
-            eyebrow={`@${route.handle} / Private analytics`}
-            title="Private detail"
-            body="Sessions and projects are available only to the profile owner on the computer that stores the telemetry."
-            action={<a href={pathForPublicProfile(route.handle)} className="inline-flex min-h-11 items-center border-2 border-[var(--line-strong)] px-4 font-mono text-xs font-bold uppercase">View public dashboard</a>}
-          />
-        </PublicShell>
-      );
-    }
-    return <PublicProfilePage handle={route.handle} auth={publicAuth} />;
+    return <PublicProfilePage handle={route.handle} tab={route.tab} auth={publicAuth} />;
   }
   if (route.kind === 'not-found') {
     return (

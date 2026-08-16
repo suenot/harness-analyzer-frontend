@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { AuthSession } from '../lib/auth';
+import type { UserTab } from '../lib/navigation';
 import type { LandingAuthStatus } from './LandingPage';
 import { SiteHeader } from './SiteHeader';
 
@@ -11,7 +12,14 @@ export interface PublicAuthProps {
   showPrivateNavigation?: boolean;
 }
 
-export function PublicShell({ auth, children }: { auth: PublicAuthProps; children: ReactNode }) {
+export interface PublicUserNavigation {
+  handle: string;
+  activeTab: UserTab;
+  shareSessions: boolean;
+  shareProjects: boolean;
+}
+
+export function PublicShell({ auth, children, userNavigation }: { auth: PublicAuthProps; children: ReactNode; userNavigation?: PublicUserNavigation }) {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[var(--paper)] text-[var(--ink)]">
       <SiteHeader
@@ -20,11 +28,12 @@ export function PublicShell({ auth, children }: { auth: PublicAuthProps; childre
         userHandle={auth.ownHandle}
         authStatus={auth.status}
         onSignIn={auth.onSignIn}
+        publicUserNavigation={userNavigation}
       />
       <main className="mx-auto w-full max-w-[1440px] flex-1 px-3 py-4 md:px-6 md:py-6">{children}</main>
       <footer className="mx-auto mb-[calc(64px+env(safe-area-inset-bottom))] flex w-full max-w-[1440px] items-center justify-between border-x border-t border-[var(--line-strong)] px-5 py-4 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--muted)] lg:mb-0">
         <span>Harness Analyzer</span>
-        <span>Public aggregates only</span>
+        <span>Public self-reported statistics</span>
       </footer>
     </div>
   );
