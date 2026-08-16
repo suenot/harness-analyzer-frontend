@@ -22,9 +22,13 @@ const sortOptions: Array<{ value: ProjectSort; label: string }> = [
 
 const PROJECT_PAGE_SIZE = 24;
 
+function projectDetailsId(cwd: string): string {
+  return `project-details-${encodeURIComponent(cwd)}`;
+}
+
 function DataCell({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
   return (
-    <div className="min-w-0 border-t border-[#1B1B1B] py-2 first:border-t-0">
+    <div className="min-w-0 border-b border-r border-[#1B1B1B] px-3 py-2.5">
       <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[#66645F]">{label}</dt>
       <dd className={`mt-1 min-w-0 break-words font-mono text-sm font-semibold tabular-nums [overflow-wrap:anywhere] ${emphasis ? 'text-[#BC1010]' : 'text-[#111111]'}`}>
         {value}
@@ -44,21 +48,21 @@ function ProjectSummaryCard({
   expanded: boolean;
   onToggle: () => void;
 }) {
-  const detailsId = `project-details-${encodeURIComponent(project.cwd)}`;
+  const detailsId = projectDetailsId(project.cwd);
   const visibleSources = project.sources.slice(0, 3);
   const hiddenSourceCount = project.sources.length - visibleSources.length;
 
   return (
-    <li className="border border-[#1B1B1B] bg-[#F4F4F0]">
-      <article>
+    <li className={`min-w-0 border border-[#1B1B1B] bg-[#F4F4F0] ${expanded ? 'md:col-span-2 xl:col-span-3' : 'md:aspect-square'}`}>
+      <article className={expanded ? undefined : 'md:flex md:h-full md:min-h-0 md:flex-col'}>
         <button
           type="button"
           aria-expanded={expanded}
           aria-controls={expanded ? detailsId : undefined}
           onClick={onToggle}
-          className="group block min-h-11 w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#BC1010]"
+          className={`group flex min-h-11 w-full flex-col text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#BC1010] ${expanded ? '' : 'md:h-full md:min-h-0'}`}
         >
-          <div className="min-w-0 p-4 sm:p-5">
+          <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
             <div className="min-w-0">
               <div className="flex min-w-0 items-start gap-3">
                 <span
@@ -69,10 +73,10 @@ function ProjectSummaryCard({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#BC1010]">Project unit</span>
-                  <span className="mt-1 block break-words text-xl font-black leading-none tracking-[-0.045em] text-[#111111] [overflow-wrap:anywhere] sm:text-2xl">
+                  <span className="mt-1 line-clamp-2 block break-words text-xl font-black leading-none tracking-[-0.045em] text-[#111111] [overflow-wrap:anywhere] sm:text-2xl" title={projectLabel(project.cwd)}>
                     {projectLabel(project.cwd)}
                   </span>
-                  {!publicView ? <span className="mt-3 block break-words font-mono text-[11px] leading-4 text-[#66645F] [overflow-wrap:anywhere]">{project.cwd || '(no project path)'}</span> : null}
+                  {!publicView ? <span className="mt-3 line-clamp-2 block break-words font-mono text-[11px] leading-4 text-[#66645F] [overflow-wrap:anywhere]" title={project.cwd || '(no project path)'}>{project.cwd || '(no project path)'}</span> : null}
                 </span>
               </div>
               <div className="mt-4 flex min-h-6 flex-wrap gap-1.5 border-t border-[#1B1B1B] pt-3">
@@ -87,7 +91,7 @@ function ProjectSummaryCard({
               </div>
             </div>
 
-            <dl className="mt-4 min-w-0 border-t border-[#1B1B1B] pt-2">
+            <dl className="mt-auto grid min-w-0 grid-cols-2 border-l border-t border-[#1B1B1B] pt-0">
               <DataCell label="USD" value={formatProjectMetric(project.cost, 'usd')} emphasis />
               <DataCell label="Tokens" value={formatCompactProjectMetric(project.tokens, 'tokens')} />
               <DataCell label="Sessions" value={project.sessions.toLocaleString('en-US')} />
@@ -107,13 +111,17 @@ function ProjectSummaryCard({
 
 function ProjectsLoading() {
   return (
-    <div className="border border-[#1B1B1B]" aria-label="Loading projects" aria-busy="true">
-      {Array.from({ length: 5 }, (_, index) => (
-        <div key={index} className="animate-pulse border-t border-[#1B1B1B] p-4 first:border-t-0 sm:p-5">
-          <div className="h-14 bg-[#DEDDD7]" />
-          <div className="mt-3 space-y-2">
-            {Array.from({ length: 4 }, (_, statIndex) => <div key={statIndex} className="h-14 bg-[#DEDDD7]" />)}
+    <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Loading projects" aria-busy="true">
+      {Array.from({ length: 6 }, (_, index) => (
+        <div key={index} className="flex animate-pulse flex-col border border-[#1B1B1B] md:aspect-square">
+          <div className="flex flex-1 flex-col p-4 sm:p-5">
+            <div className="h-16 bg-[#DEDDD7]" />
+            <div className="mt-4 h-8 bg-[#DEDDD7]" />
+            <div className="mt-auto grid grid-cols-2 gap-px border border-[#1B1B1B] bg-[#1B1B1B]">
+              {Array.from({ length: 4 }, (_, statIndex) => <div key={statIndex} className="h-14 bg-[#DEDDD7]" />)}
+            </div>
           </div>
+          <div className="h-11 shrink-0 border-t border-[#1B1B1B] bg-[#DEDDD7]" />
         </div>
       ))}
     </div>
@@ -265,7 +273,7 @@ export function ProjectsTable({ refreshKey = 0, publicHandle }: ProjectsTablePro
                 {query && <button type="button" onClick={clearSearch} className="mt-5 min-h-11 border border-[#1B1B1B] bg-[#BC1010] px-4 font-mono text-xs font-semibold uppercase tracking-[0.1em] text-[#F4F4F0] hover:bg-[#111111] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#BC1010]">Clear search</button>}
               </div>
             ) : (
-              <ul className="space-y-3 sm:space-y-4" aria-label="Projects">
+              <ul className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Projects">
                 {visibleProjects.map(project => (
                   <ProjectSummaryCard key={project.cwd} project={project} publicView={publicView} expanded={expandedCwd === project.cwd} onToggle={() => setExpandedCwd(current => current === project.cwd ? null : project.cwd)} />
                 ))}

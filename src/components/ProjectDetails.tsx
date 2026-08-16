@@ -129,7 +129,7 @@ export function ProjectDetails({ id, project }: ProjectDetailsProps) {
         </div>
       </div>
 
-      <div className="mt-4 min-w-0 space-y-4">
+      <div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
         <BreakdownChart breakdown={project.byModel} colorFor={colorForModel} metric={metric} modelShades title="By model" unit="Model matrix" />
         <BreakdownChart breakdown={project.byHarness} colorFor={colorForSource} metric={metric} title="By harness" unit="Harness matrix" />
       </div>
