@@ -16,8 +16,18 @@ interface LandingPageProps {
 }
 
 function CopyCommand({ command, label, prominent = false }: { command: string; label: string; prominent?: boolean }) {
-  const input = useRef<HTMLInputElement>(null);
+  const commandText = useRef<HTMLElement>(null);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+
+  function selectCommand() {
+    if (!commandText.current) return;
+    commandText.current.focus();
+    const range = document.createRange();
+    range.selectNodeContents(commandText.current);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }
 
   async function copy() {
     try {
@@ -25,8 +35,7 @@ function CopyCommand({ command, label, prominent = false }: { command: string; l
       await navigator.clipboard.writeText(command);
       setCopyStatus('copied');
     } catch {
-      input.current?.focus();
-      input.current?.select();
+      selectCommand();
       setCopyStatus('failed');
     }
   }
@@ -34,15 +43,12 @@ function CopyCommand({ command, label, prominent = false }: { command: string; l
   return (
     <div className="min-w-0">
       <div className="flex min-w-0 items-center gap-2">
-        <input
-          ref={input}
+        <code
+          ref={commandText}
           aria-label={`${label} command`}
-          readOnly
-          value={command}
-          onFocus={event => event.currentTarget.select()}
-          onClick={event => event.currentTarget.select()}
-          className={`copy-command-input min-w-0 flex-1 cursor-text border-0 bg-transparent p-0 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 ${prominent ? 'copy-command-input-prominent leading-[1.2] tracking-[-0.04em] text-white focus-visible:outline-white' : 'text-[var(--ink)]'}`}
-        />
+          tabIndex={0}
+          className={`copy-command-text min-w-0 flex-1 cursor-text whitespace-pre-wrap break-words outline-none focus-visible:outline-2 focus-visible:outline-offset-2 ${prominent ? 'copy-command-text-prominent leading-[1.2] tracking-[-0.04em] text-white focus-visible:outline-white' : 'text-[var(--ink)]'}`}
+        >{command}</code>
         <button
           type="button"
           onClick={copy}
@@ -93,48 +99,48 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
                   <p className="text-lg font-black uppercase leading-tight">Your conversation text stays local by default.</p>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Standard sync uploads per-session usage statistics, project folder names and a private device label. It excludes prompts, chat text, file contents and full paths. Only the optional <code>--include-history</code> flag uploads conversation history, which may contain private text; background sync never uses it.</p>
                 </aside>
-                <ol aria-label="Set up automatic sync" className="mt-10 grid gap-px border border-[var(--line-strong)] bg-[var(--line-strong)] sm:grid-cols-2">
-                  <li className="flex min-w-0 flex-col bg-[var(--paper)] p-4">
-                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">01 / Create token</p>
-                    <p className="mt-2 text-sm leading-6">Open your profile and create a CLI sync token.</p>
-                    <a href="/profile" className="mt-auto w-fit pt-4 font-mono text-xs font-bold uppercase underline underline-offset-4 hover:text-[var(--signal)]">Open profile</a>
-                  </li>
-                  <li className="flex min-w-0 flex-col bg-[var(--paper)] p-4">
-                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">02 / Connect device</p>
-                    <p className="mt-2 text-sm leading-6">Paste that token when the CLI prompts you.</p>
-                    <div className="mt-auto pt-4"><CopyCommand command="harness-analyzer login" label="login" /></div>
-                  </li>
-                  <li className="flex min-w-0 flex-col bg-[var(--paper)] p-4">
-                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">03 / Sync now</p>
-                    <p className="mt-2 text-sm leading-6">Upload the first aggregate snapshot to your profile.</p>
-                    <div className="mt-auto pt-4"><CopyCommand command="harness-analyzer sync" label="sync" /></div>
-                  </li>
-                  <li className="flex min-w-0 flex-col bg-[var(--paper)] p-4">
-                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">04 / Automate on macOS</p>
-                    <p className="mt-2 text-sm leading-6">Start background sync now and repeat every 15 minutes. macOS only.</p>
-                    <div className="mt-auto pt-4"><CopyCommand command="harness-analyzer background start" label="background sync" /></div>
-                  </li>
-                </ol>
               </div>
               <a href="#method" className="mt-12 w-fit border-b-2 border-[var(--ink)] pb-1 font-mono text-xs font-bold uppercase tracking-[0.08em] text-[var(--ink)] hover:border-[var(--signal)] hover:text-[var(--signal)]">
                 See the method
               </a>
             </div>
 
-            <div className="min-h-80 border-t border-[var(--line-strong)] bg-[var(--paper-deep)] lg:border-l lg:border-t-0">
-              <dl className="grid h-full grid-cols-2 bg-[var(--line-strong)]">
+            <div className="flex min-w-0 flex-col border-t border-[var(--line-strong)] lg:border-l lg:border-t-0">
+              <dl className="order-2 grid grid-cols-2 border-t border-[var(--line-strong)] bg-[var(--line-strong)] lg:order-1 lg:border-t-0">
                 {[
                   ['Sources', 'Claude + Codex'],
                   ['Measures', 'USD + tokens'],
                   ['Cache TTL', '5m + 1h'],
-                  ['Hosted sync', 'Aggregates + host label'],
+                  ['Hosted sync', 'Sessions + device'],
                 ].map(([label, value], index) => (
-                  <div key={label} className={`flex min-h-40 flex-col justify-between bg-[var(--paper)] p-5 sm:p-6 lg:min-h-0 lg:p-8 ${index % 2 === 0 ? 'border-r border-[var(--line-strong)]' : ''} ${index < 2 ? 'border-b border-[var(--line-strong)]' : ''}`}>
+                  <div key={label} className={`flex min-h-40 flex-col justify-between bg-[var(--paper)] p-5 sm:p-6 lg:p-7 ${index % 2 === 0 ? 'border-r border-[var(--line-strong)]' : ''} ${index < 2 ? 'border-b border-[var(--line-strong)]' : ''}`}>
                     <dt className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">{label}</dt>
                     <dd className="mt-8 text-[clamp(1.15rem,2.2vw,2rem)] font-black uppercase leading-[0.96] tracking-[-0.04em]">{value}</dd>
                   </div>
                 ))}
               </dl>
+              <ol aria-label="Set up automatic sync" className="order-1 grid gap-px bg-[var(--line-strong)] lg:order-2 lg:border-t lg:border-[var(--line-strong)]">
+                <li className="flex min-w-0 flex-col bg-[var(--paper)] p-5 lg:p-6">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">01 / Create token</p>
+                  <p className="mt-2 text-sm leading-6">Open your profile and create a CLI sync token.</p>
+                  <a href="/profile" className="mt-4 w-fit font-mono text-xs font-bold uppercase underline underline-offset-4 hover:text-[var(--signal)]">Open profile</a>
+                </li>
+                <li className="flex min-w-0 flex-col bg-[var(--paper)] p-5 lg:p-6">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">02 / Connect device</p>
+                  <p className="mt-2 text-sm leading-6">Paste that token when the CLI prompts you.</p>
+                  <div className="mt-4"><CopyCommand command="harness-analyzer login" label="login" /></div>
+                </li>
+                <li className="flex min-w-0 flex-col bg-[var(--paper)] p-5 lg:p-6">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">03 / Sync now</p>
+                  <p className="mt-2 text-sm leading-6">Upload the first statistics snapshot to your profile.</p>
+                  <div className="mt-4"><CopyCommand command="harness-analyzer sync" label="sync" /></div>
+                </li>
+                <li className="flex min-w-0 flex-col bg-[var(--paper)] p-5 lg:p-6">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">04 / Automate on macOS</p>
+                  <p className="mt-2 text-sm leading-6">Start background sync now and repeat every 15 minutes. macOS only.</p>
+                  <div className="mt-4"><CopyCommand command="harness-analyzer background start" label="background sync" /></div>
+                </li>
+              </ol>
             </div>
           </div>
         </section>
@@ -166,7 +172,7 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
             {[
               ['Read', 'Parse local Claude Code and Codex usage events.'],
               ['Price', 'Apply model-specific input, output and cache rates.'],
-              ['Sync', 'Upload aggregate totals and a private device label to your signed-in profile.'],
+              ['Sync', 'Upload private session usage statistics and a device label to your signed-in profile.'],
             ].map(([title, body]) => (
               <article key={title} className="bg-[var(--paper)] p-6 sm:p-8">
                 <h3 className="text-2xl font-black uppercase tracking-[-0.04em]">{title}</h3>

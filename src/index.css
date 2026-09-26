@@ -44,14 +44,21 @@ select {
   font: inherit;
 }
 
-.copy-command-input {
+.copy-command-text {
   font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 0.875rem;
   font-weight: 700;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
-.copy-command-input-prominent {
+.copy-command-text-prominent {
   font-size: clamp(0.9rem, 3vw, 2rem);
+}
+
+.copy-command-text-prominent::selection {
+  background: #fff;
+  color: var(--signal);
 }
 
 button,

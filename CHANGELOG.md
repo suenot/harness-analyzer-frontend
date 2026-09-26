@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-09-26
+
+### Fixed
+
+- Made the installation command visibly selectable by mouse while keeping its copy button.
+- Filled the landing hero's right column with compact facts and sync setup steps.
+- Corrected the hosted sync summary to describe private session statistics.
+
 ## [0.4.1] - 2026-09-26
 
 ### Fixed
