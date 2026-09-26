@@ -6,7 +6,7 @@ export const MODEL_COLORS: Record<string, string> = {
   'Codex Sol': '#087F68',
   'Codex Terra': '#10A37F',
   'Codex Luna': '#55C6A9',
-  'GLM 5.2': '#22d3ee',
+  GLM: '#22d3ee',
 };
 
 const SOURCE_COLORS: Record<string, string> = {
@@ -34,7 +34,7 @@ export function modelFamilyFor(model: string): string {
   if (value.includes('sonnet')) return 'Sonnet';
   if (value.includes('haiku')) return 'Haiku';
   if (value.includes('fable')) return 'Fable';
-  if (value.includes('glm')) return 'GLM 5.2';
+  if (value.includes('glm')) return 'GLM';
   return 'Unknown';
 }
 

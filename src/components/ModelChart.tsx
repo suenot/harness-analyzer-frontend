@@ -10,7 +10,6 @@ import { UsageMetricToggle } from './UsageMetricToggle';
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 function cleanLabel(model: string): string {
-  if (model === 'GLM 5.2') return 'GLM 5.2';
   return model.replace(/^claude-/, '').replace(/-\d{8}$/, '');
 }
 

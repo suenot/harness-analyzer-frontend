@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-09-27
+
+### Fixed
+
+- Use a generic GLM chart color without treating every GLM model as GLM 5.2.
+
 ## [0.4.2] - 2026-09-26
 
 ### Fixed
