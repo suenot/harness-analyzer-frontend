@@ -22,6 +22,13 @@ test('shows how to install the aggregate sync CLI on the public landing page', (
   assert.match(installStrip, /value="npm install -g harness-analyzer"/);
   assert.match(installStrip, /aria-label="Copy installation command"/);
   assert.ok(html.indexOf('aria-labelledby="install-cli-label"') < html.indexOf('<h1'));
+  const privacyNote = html.match(/<aside aria-label="What sync uploads".*?<\/aside>/)?.[0];
+  assert.ok(privacyNote);
+  assert.ok(html.indexOf('aria-label="What sync uploads"') < html.indexOf('aria-label="Set up automatic sync"'));
+  assert.match(privacyNote, /per-session usage statistics, project folder names and a private device label/);
+  assert.match(privacyNote, /excludes prompts, chat text, file contents and full paths/);
+  assert.match(privacyNote, /--include-history/);
+  assert.match(privacyNote, /background sync never uses it/);
   const setup = html.match(/<ol aria-label="Set up automatic sync".*?<\/ol>/)?.[0];
   assert.ok(setup);
   assert.match(setup, /href="\/profile"/);
@@ -32,7 +39,7 @@ test('shows how to install the aggregate sync CLI on the public landing page', (
   assert.equal((setup.match(/aria-label="Copy [^"]+ command"/g) ?? []).length, 3);
   assert.match(html, />Hosted sync</);
   assert.match(html, />Aggregates \+ host label</);
-  assert.match(html, /Raw telemetry stays on your machine/);
+  assert.match(html, /Know what leaves your machine/);
   assert.match(html, /Device labels are never published/);
   assert.doesNotMatch(html, /Harness Analyzer mark/);
   assert.equal(html.match(/<img/g)?.length, 1);

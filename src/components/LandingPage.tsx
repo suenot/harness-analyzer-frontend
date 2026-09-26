@@ -89,6 +89,10 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
                 <p className="mt-8 max-w-xl text-base leading-7 text-[var(--muted)] md:text-lg">
                   Local cost, token, cache and session analytics for Claude Code and Codex.
                 </p>
+                <aside aria-label="What sync uploads" className="mt-8 max-w-3xl border-l-4 border-[var(--signal)] pl-4">
+                  <p className="text-lg font-black uppercase leading-tight">Your conversation text stays local by default.</p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Standard sync uploads per-session usage statistics, project folder names and a private device label. It excludes prompts, chat text, file contents and full paths. Only the optional <code>--include-history</code> flag uploads conversation history, which may contain private text; background sync never uses it.</p>
+                </aside>
                 <ol aria-label="Set up automatic sync" className="mt-10 grid gap-px border border-[var(--line-strong)] bg-[var(--line-strong)] sm:grid-cols-2">
                   <li className="flex min-w-0 flex-col bg-[var(--paper)] p-4">
                     <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">01 / Create token</p>
@@ -156,8 +160,8 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
         </section>
 
         <section id="method" className="border-x border-t border-[var(--line-strong)] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
-          <h2 className="max-w-4xl text-[clamp(2.5rem,6vw,5.5rem)] font-black uppercase leading-[0.88] tracking-[-0.06em]">Raw telemetry stays on your machine.</h2>
-          <p className="mt-7 max-w-2xl text-base leading-7 text-[var(--muted)]">The CLI uploads aggregate statistics plus a private device label for your device chart. Raw sessions, prompts, files and project paths stay local. Device labels are never published.</p>
+          <h2 className="max-w-4xl text-[clamp(2.5rem,6vw,5.5rem)] font-black uppercase leading-[0.88] tracking-[-0.06em]">Know what leaves your machine.</h2>
+          <p className="mt-7 max-w-2xl text-base leading-7 text-[var(--muted)]">The CLI processes local logs, then uploads session-level usage statistics, project folder names and a private device label. Standard sync excludes conversation text, file contents and full paths. The optional <code>--include-history</code> flag uploads conversation history, which may contain private text. Device labels are never published.</p>
           <div className="mt-12 grid gap-px border border-[var(--line-strong)] bg-[var(--line-strong)] md:grid-cols-3">
             {[
               ['Read', 'Parse local Claude Code and Codex usage events.'],

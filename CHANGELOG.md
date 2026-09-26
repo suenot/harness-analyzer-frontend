@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-26
+
+### Fixed
+
+- Clarified in the landing hero that standard sync uploads per-session usage data but no conversation text, and that the optional history flag can upload private text.
+- Corrected the method section's description of uploaded data.
+
 ## [0.4.0] - 2026-09-26
 
 ### Added
