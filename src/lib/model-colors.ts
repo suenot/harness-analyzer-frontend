@@ -6,6 +6,10 @@ export const MODEL_COLORS: Record<string, string> = {
   'Codex Sol': '#087F68',
   'Codex Terra': '#10A37F',
   'Codex Luna': '#55C6A9',
+  'GPT-6 Astra': '#064E3B',
+  'GPT-6 Sol': '#16A34A',
+  'GPT-6 Luna': '#65A30D',
+  GPT: '#2E7D32',
   GLM: '#22d3ee',
 };
 
@@ -27,9 +31,13 @@ const FALLBACK_COLOR = '#94a3b8';
 
 export function modelFamilyFor(model: string): string {
   const value = model.toLowerCase();
+  if (value.includes('gpt-6-astra')) return 'GPT-6 Astra';
+  if (value.includes('gpt-6-sol')) return 'GPT-6 Sol';
+  if (value.includes('gpt-6-luna')) return 'GPT-6 Luna';
   if (value.includes('gpt-5.6-sol') || value.includes('codex sol')) return 'Codex Sol';
   if (value.includes('gpt-5.6-terra') || value.includes('codex terra')) return 'Codex Terra';
   if (value.includes('gpt-5.6-luna') || value.includes('codex luna')) return 'Codex Luna';
+  if (/(?:^|[/-])gpt[- ]/.test(value)) return 'GPT';
   if (value.includes('opus')) return 'Opus';
   if (value.includes('sonnet')) return 'Sonnet';
   if (value.includes('haiku')) return 'Haiku';

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-09-27
+
+### Fixed
+
+- Give GPT-6 Astra, Sol, and Luna distinct green chart colors and use green for other GPT models.
+
 ## [0.4.3] - 2026-09-27
 
 ### Fixed
