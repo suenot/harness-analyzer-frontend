@@ -1,6 +1,6 @@
 {
-  "name": "@claude-stats/frontend",
-  "version": "0.3.2",
+  "name": "@harness-analyzer/frontend",
+  "version": "0.3.3",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
