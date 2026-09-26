@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-26
+
+### Added
+
+- Show token creation, CLI login, initial sync, and macOS background sync steps in the landing hero.
+
+### Fixed
+
+- Make the installation and setup commands selectable and copyable.
+
 ## [0.3.3] - 2026-09-26
 
 ### Changed

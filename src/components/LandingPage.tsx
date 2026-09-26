@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import type { AuthSession } from '../lib/auth';
 import { CLI_INSTALL_COMMAND } from '../lib/cli';
 import { SiteHeader } from './SiteHeader';
@@ -12,6 +13,48 @@ interface LandingPageProps {
   onSignOut: () => void;
   ownHandle?: string | null;
   showPrivateNavigation?: boolean;
+}
+
+function CopyCommand({ command, label, prominent = false }: { command: string; label: string; prominent?: boolean }) {
+  const input = useRef<HTMLInputElement>(null);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+
+  async function copy() {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(command);
+      setCopyStatus('copied');
+    } catch {
+      input.current?.focus();
+      input.current?.select();
+      setCopyStatus('failed');
+    }
+  }
+
+  return (
+    <div className="min-w-0">
+      <div className="flex min-w-0 items-center gap-2">
+        <input
+          ref={input}
+          aria-label={`${label} command`}
+          readOnly
+          value={command}
+          onFocus={event => event.currentTarget.select()}
+          onClick={event => event.currentTarget.select()}
+          className={`copy-command-input min-w-0 flex-1 cursor-text border-0 bg-transparent p-0 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 ${prominent ? 'copy-command-input-prominent leading-[1.2] tracking-[-0.04em] text-white focus-visible:outline-white' : 'text-[var(--ink)]'}`}
+        />
+        <button
+          type="button"
+          onClick={copy}
+          aria-label={`Copy ${label} command`}
+          className={`min-h-11 shrink-0 border px-3 font-mono text-[11px] font-bold uppercase tracking-[0.08em] ${prominent ? 'border-white text-white hover:bg-white hover:text-[var(--signal)]' : 'border-[var(--line-strong)] text-[var(--ink)] hover:bg-[var(--ink)] hover:text-white'}`}
+        >
+          {copyStatus === 'copied' ? 'Copied' : 'Copy'}
+        </button>
+      </div>
+      {copyStatus === 'failed' ? <p role="status" className={`mt-2 text-xs ${prominent ? 'text-white' : 'text-[var(--muted)]'}`}>Select the command and press Ctrl/Cmd+C.</p> : null}
+    </div>
+  );
 }
 
 export function LandingPage({ status, session, message, onSignIn, onSignOut, ownHandle, showPrivateNavigation }: LandingPageProps) {
@@ -31,11 +74,9 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
 
       <main className="mx-auto max-w-[1440px]">
         <section className="flex min-h-[calc(100dvh-65px)] flex-col border-x border-[var(--line-strong)]">
-          <aside aria-labelledby="install-cli-label" className="flex min-w-0 shrink-0 flex-col gap-2 border-b border-[var(--line-strong)] bg-[var(--signal)] px-5 py-5 text-white sm:flex-row sm:items-baseline sm:justify-between sm:gap-6 sm:px-8 lg:px-12 lg:py-6">
+          <aside aria-labelledby="install-cli-label" className="flex min-w-0 shrink-0 flex-col gap-3 border-b border-[var(--line-strong)] bg-[var(--signal)] px-5 py-5 text-white sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:px-12 lg:py-6">
             <p id="install-cli-label" className="shrink-0 font-mono text-xs font-bold uppercase tracking-[0.12em]">Install sync CLI</p>
-            <div className="min-w-0 max-w-full overflow-x-auto py-1 sm:text-right">
-              <code className="block select-all whitespace-nowrap font-mono text-[clamp(0.9rem,4vw,2rem)] font-black leading-[1.2] tracking-[-0.04em]">{CLI_INSTALL_COMMAND}</code>
-            </div>
+            <div className="min-w-0 w-full lg:max-w-[43rem]"><CopyCommand command={CLI_INSTALL_COMMAND} label="installation" prominent /></div>
           </aside>
 
           <div className="grid flex-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
@@ -48,6 +89,28 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
                 <p className="mt-8 max-w-xl text-base leading-7 text-[var(--muted)] md:text-lg">
                   Local cost, token, cache and session analytics for Claude Code and Codex.
                 </p>
+                <ol aria-label="Set up automatic sync" className="mt-10 grid gap-px border border-[var(--line-strong)] bg-[var(--line-strong)] sm:grid-cols-2">
+                  <li className="flex min-w-0 flex-col bg-[var(--paper)] p-4">
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">01 / Create token</p>
+                    <p className="mt-2 text-sm leading-6">Open your profile and create a CLI sync token.</p>
+                    <a href="/profile" className="mt-auto w-fit pt-4 font-mono text-xs font-bold uppercase underline underline-offset-4 hover:text-[var(--signal)]">Open profile</a>
+                  </li>
+                  <li className="flex min-w-0 flex-col bg-[var(--paper)] p-4">
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">02 / Connect device</p>
+                    <p className="mt-2 text-sm leading-6">Paste that token when the CLI prompts you.</p>
+                    <div className="mt-auto pt-4"><CopyCommand command="harness-analyzer login" label="login" /></div>
+                  </li>
+                  <li className="flex min-w-0 flex-col bg-[var(--paper)] p-4">
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">03 / Sync now</p>
+                    <p className="mt-2 text-sm leading-6">Upload the first aggregate snapshot to your profile.</p>
+                    <div className="mt-auto pt-4"><CopyCommand command="harness-analyzer sync" label="sync" /></div>
+                  </li>
+                  <li className="flex min-w-0 flex-col bg-[var(--paper)] p-4">
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--signal)]">04 / Automate on macOS</p>
+                    <p className="mt-2 text-sm leading-6">Start background sync now and repeat every 15 minutes. macOS only.</p>
+                    <div className="mt-auto pt-4"><CopyCommand command="harness-analyzer background start" label="background sync" /></div>
+                  </li>
+                </ol>
               </div>
               <a href="#method" className="mt-12 w-fit border-b-2 border-[var(--ink)] pb-1 font-mono text-xs font-bold uppercase tracking-[0.08em] text-[var(--ink)] hover:border-[var(--signal)] hover:text-[var(--signal)]">
                 See the method
