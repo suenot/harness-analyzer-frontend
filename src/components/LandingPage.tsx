@@ -15,6 +15,23 @@ interface LandingPageProps {
   showPrivateNavigation?: boolean;
 }
 
+function SourceLink({ className }: { className: string }) {
+  return (
+    <a
+      href="https://github.com/suenot/harness-analyzer"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Harness Analyzer source code on GitHub"
+      className={`inline-flex min-h-11 items-center gap-2 hover:text-[var(--signal)] ${className}`}
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 shrink-0">
+        <path d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.333-5.466-5.93 0-1.31.467-2.38 1.235-3.22-.123-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23a11.52 11.52 0 0 1 3.003-.404c1.02.005 2.045.138 3.003.404 2.291-1.552 3.297-1.23 3.297-1.23.654 1.652.242 2.873.119 3.176.77.84 1.233 1.91 1.233 3.22 0 4.61-2.805 5.625-5.478 5.922.43.372.823 1.102.823 2.222 0 1.606-.015 2.898-.015 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.596 24 12.297c0-6.627-5.373-12-12-12" />
+      </svg>
+      Source on GitHub
+    </a>
+  );
+}
+
 function CopyCommand({ command, label, prominent = false }: { command: string; label: string; prominent?: boolean }) {
   const commandText = useRef<HTMLElement>(null);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
@@ -100,9 +117,12 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Standard sync uploads per-session usage statistics, project folder names and a private device label. It excludes prompts, chat text, file contents and full paths. Only the optional <code>--include-history</code> flag uploads conversation history, which may contain private text; background sync never uses it.</p>
                 </aside>
               </div>
-              <a href="#method" className="mt-12 w-fit border-b-2 border-[var(--ink)] pb-1 font-mono text-xs font-bold uppercase tracking-[0.08em] text-[var(--ink)] hover:border-[var(--signal)] hover:text-[var(--signal)]">
-                See the method
-              </a>
+              <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-3 font-mono text-xs font-bold uppercase tracking-[0.08em] text-[var(--ink)]">
+                <a href="#method" className="w-fit border-b-2 border-[var(--ink)] pb-1 hover:border-[var(--signal)] hover:text-[var(--signal)]">
+                  See the method
+                </a>
+                <SourceLink className="border-b-2 border-[var(--ink)] pb-1 hover:border-[var(--signal)]" />
+              </div>
             </div>
 
             <div className="flex min-w-0 flex-col border-t border-[var(--line-strong)] lg:border-l lg:border-t-0">
@@ -185,7 +205,10 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
 
       <footer className="mx-auto mb-[calc(64px+env(safe-area-inset-bottom))] flex w-full max-w-[1440px] flex-col gap-2 border border-[var(--line-strong)] px-5 py-5 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between lg:mb-0">
         <span>Harness Analyzer</span>
-        <a href="https://marketmaker.cc" className="hover:text-[var(--signal)]">MarketMaker</a>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <SourceLink className="font-bold text-[var(--ink)]" />
+          <a href="https://marketmaker.cc" className="hover:text-[var(--signal)]">MarketMaker</a>
+        </div>
       </footer>
     </div>
   );

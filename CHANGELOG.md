@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-09-30
+
+### Fixed
+
+- Make the open-source repository discoverable with accessible GitHub icon links in the landing hero and footer.
+
 ## [0.4.4] - 2026-09-27
 
 ### Fixed
