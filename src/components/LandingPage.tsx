@@ -118,9 +118,6 @@ export function LandingPage({ status, session, message, onSignIn, onSignOut, own
                 </aside>
               </div>
               <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-3 font-mono text-xs font-bold uppercase tracking-[0.08em] text-[var(--ink)]">
-                <a href="#method" className="w-fit border-b-2 border-[var(--ink)] pb-1 hover:border-[var(--signal)] hover:text-[var(--signal)]">
-                  See the method
-                </a>
                 <SourceLink className="border-b-2 border-[var(--ink)] pb-1 hover:border-[var(--signal)]" />
               </div>
             </div>
