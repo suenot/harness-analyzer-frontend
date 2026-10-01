@@ -9,6 +9,7 @@ const profile: PublicUserProfile = {
   handle: 'mark-1',
   display_name: 'Mark',
   visibility: 'details',
+  audience: 'public',
   share_sessions: true,
   share_projects: false,
   snapshot: {
@@ -42,6 +43,7 @@ test('routes non-owner shared tabs through public loaders only', async () => {
   assert.match(sessions, /publicHandle \? publicApi\.getUserSessions/);
   assert.match(projects, /publicHandle \? publicApi\.getUserProjects/);
   assert.match(profilePage, /title="Page not shared"/);
+  assert.match(profilePage, /onClick=\{auth\.onSignIn\}/);
 });
 
 test('keeps owner-only session fields outside the public DTO', async () => {
@@ -54,6 +56,10 @@ test('keeps owner-only session fields outside the public DTO', async () => {
   const projectDto = apiSource.match(/export interface PublicProjectEntry \{([\s\S]*?)\n\}/)?.[1] || '';
   assert.match(projectDto, /label: string/);
   assert.doesNotMatch(projectDto, /\bcwd\b/);
+
+  const profileDto = apiSource.match(/export interface PublicUserProfile \{([\s\S]*?)\n\}/)?.[1] || '';
+  assert.match(profileDto, /audience: SharingAudience/);
+  assert.doesNotMatch(profileDto, /allowed_emails|allowed_group_ids/);
 });
 
 test('profile controls clear public page flags outside detailed sharing', async () => {

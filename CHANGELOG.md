@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-02
+
+### Added
+
+- Let profile owners share totals or details with selected verified email addresses and Auth Service groups.
+- Show sign-in access guidance when a restricted profile cannot be opened.
+
+### Changed
+
+- Keep profiles limited to selected viewers out of the public Users ranking.
+
 ## [0.4.6] - 2026-09-30
 
 ### Fixed

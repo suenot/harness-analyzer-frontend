@@ -41,9 +41,11 @@ export function PublicProfilePage({ handle, tab = 'dashboard', auth }: { handle:
 
   if (loading && !data) return <PublicShell auth={auth}><div className="min-h-[70dvh] animate-pulse border-2 border-[var(--line-strong)] bg-[var(--paper-deep)]" aria-label="Loading public profile" /></PublicShell>;
   if (error || !data) {
-    const unavailable = error?.includes('404');
-    return <PublicShell auth={auth}><PublicState eyebrow="Harness Analyzer / Public profile" title={unavailable ? 'Profile unavailable' : 'Statistics unavailable'} body={unavailable ? 'This profile is private or does not exist.' : 'Public statistics could not be loaded. Try again shortly.'} action={unavailable ? <a href="/users" className="inline-flex min-h-11 items-center border-2 border-[var(--line-strong)] px-4 font-mono text-xs font-bold uppercase">Browse users</a> : <button type="button" onClick={refetch} className="min-h-11 bg-[var(--signal)] px-4 font-mono text-xs font-bold uppercase text-white">Retry</button>} /></PublicShell>;
+    const unavailable = !!error && /(?:\(40[34]\)|API error: 40[34])$/.test(error);
+    return <PublicShell auth={auth}><PublicState eyebrow="Harness Analyzer / Shared profile" title={unavailable ? 'Profile unavailable' : 'Statistics unavailable'} body={unavailable ? 'This profile may be private, shared with selected people or groups, or missing.' : 'Statistics could not be loaded. Try again shortly.'} action={unavailable ? <div className="flex flex-wrap gap-2">{auth.status === 'anonymous' ? <button type="button" onClick={auth.onSignIn} className="min-h-11 bg-[var(--signal)] px-4 font-mono text-xs font-bold uppercase text-white">Sign in to check access</button> : null}<a href="/users" className="inline-flex min-h-11 items-center border-2 border-[var(--line-strong)] px-4 font-mono text-xs font-bold uppercase">Browse users</a></div> : <button type="button" onClick={refetch} className="min-h-11 bg-[var(--signal)] px-4 font-mono text-xs font-bold uppercase text-white">Retry</button>} /></PublicShell>;
   }
+
+  const audienceNote = data.audience === 'selected' ? <p className="mb-4 border-l-4 border-[var(--signal)] bg-[var(--paper-deep)] p-3 text-xs leading-5">This profile is shared with selected people and groups.</p> : null;
 
   const userNavigation = {
     handle: data.handle,
@@ -55,25 +57,26 @@ export function PublicProfilePage({ handle, tab = 'dashboard', auth }: { handle:
     return (
       <PublicShell auth={auth} userNavigation={userNavigation}>
         <PublicState
-          eyebrow={`@${data.handle} / Public profile`}
+          eyebrow={`@${data.handle} / ${data.audience === 'selected' ? 'Shared' : 'Public'} profile`}
           title="Page not shared"
           body={`This user has not shared their ${tab} page.`}
-          action={<a href={`/u/${encodeURIComponent(data.handle)}`} className="inline-flex min-h-11 items-center border-2 border-[var(--line-strong)] px-4 font-mono text-xs font-bold uppercase">View public dashboard</a>}
+          action={<a href={`/u/${encodeURIComponent(data.handle)}`} className="inline-flex min-h-11 items-center border-2 border-[var(--line-strong)] px-4 font-mono text-xs font-bold uppercase">View {data.audience === 'selected' ? 'shared' : 'public'} dashboard</a>}
         />
       </PublicShell>
     );
   }
 
   if (tab === 'sessions') {
-    return <PublicShell auth={auth} userNavigation={userNavigation}><SessionTable publicHandle={data.handle} /></PublicShell>;
+    return <PublicShell auth={auth} userNavigation={userNavigation}>{audienceNote}<SessionTable publicHandle={data.handle} /></PublicShell>;
   }
   if (tab === 'projects') {
-    return <PublicShell auth={auth} userNavigation={userNavigation}><ProjectsTable publicHandle={data.handle} /></PublicShell>;
+    return <PublicShell auth={auth} userNavigation={userNavigation}>{audienceNote}<ProjectsTable publicHandle={data.handle} /></PublicShell>;
   }
 
   const summary = publicTotalsToSummary(data.snapshot.totals, data.snapshot.generated_at);
   return (
     <PublicShell auth={auth} userNavigation={userNavigation}>
+      {audienceNote}
       <UsageDashboard
         summary={summary}
         details={data.visibility === 'details' ? data.snapshot.details : undefined}

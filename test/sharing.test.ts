@@ -5,7 +5,8 @@ import type { PublicSnapshotV1, SharingSettings } from '../src/lib/api.ts';
 import { saveSharingSettings, SharingPublicationError } from '../src/lib/sharing.ts';
 
 const privateSettings: SharingSettings = {
-  handle: 'suenot', display_name: 'Suenot', visibility: 'private', leaderboard_opt_in: false,
+  handle: 'suenot', display_name: 'Suenot', visibility: 'private', audience: 'public',
+  allowed_emails: [], allowed_group_ids: [], leaderboard_opt_in: false,
   share_sessions: false, share_projects: false, snapshot_generated_at: null,
 };
 const snapshot: PublicSnapshotV1 = {
@@ -78,4 +79,23 @@ test('refreshes an unchanged public snapshot through the same safe private reser
     publishSnapshot: async () => { calls.push('snapshot'); },
   });
   assert.deepEqual(calls, ['sharing:private', 'export:totals', 'snapshot', 'sharing:totals']);
+});
+
+test('selected recipients survive private reservation and cannot enter the leaderboard', async () => {
+  const updates: Array<Partial<SharingSettings>> = [];
+  await saveSharingSettings({
+    ...privateSettings,
+    visibility: 'totals', audience: 'selected', leaderboard_opt_in: true,
+    allowed_emails: [' Friend@Example.com ', 'friend@example.com'],
+    allowed_group_ids: ['group-1', 'group-1'],
+  }, {
+    updateSharing: async update => { updates.push(update); return { ...privateSettings, ...update }; },
+    exportSnapshot: async () => snapshot,
+    publishSnapshot: async () => {},
+  });
+  assert.equal(updates[0]?.visibility, 'private');
+  assert.deepEqual(updates[0]?.allowed_emails, ['friend@example.com']);
+  assert.deepEqual(updates[0]?.allowed_group_ids, ['group-1']);
+  assert.equal(updates[1]?.audience, 'selected');
+  assert.equal(updates[1]?.leaderboard_opt_in, false);
 });

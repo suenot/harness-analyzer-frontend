@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { api, ApiError, publicApi } from '../src/lib/api.ts';
+import { api, ApiError, publicApi, setAccessToken } from '../src/lib/api.ts';
 
 test('collects data through the backend POST endpoint', async () => {
   const originalFetch = globalThis.fetch;
@@ -32,7 +32,7 @@ test('uses the central public registry for profiles, shared pages and leaderboar
     if (url.includes('leaderboard')) return Response.json({ metric: 'tokens', users: [] });
     if (url.includes('/sessions')) return Response.json({ total: 0, sessions: [] });
     if (url.includes('/projects')) return Response.json([]);
-    return Response.json({ handle: 'mark-1', display_name: 'Mark', visibility: 'details', share_sessions: true, share_projects: true, snapshot: {} });
+    return Response.json({ handle: 'mark-1', display_name: 'Mark', visibility: 'details', audience: 'public', share_sessions: true, share_projects: true, snapshot: {} });
   };
   try {
     await publicApi.getUser('mark-1');
@@ -59,6 +59,9 @@ test('updates independent public page settings', async () => {
       handle: 'mark-1',
       display_name: 'Mark',
       visibility: 'details',
+      audience: 'public',
+      allowed_emails: [],
+      allowed_group_ids: [],
       leaderboard_opt_in: false,
       share_sessions: true,
       share_projects: false,
@@ -69,6 +72,25 @@ test('updates independent public page settings', async () => {
     await publicApi.updateSharing({ visibility: 'details', share_sessions: true, share_projects: false });
     assert.deepEqual(JSON.parse(body), { visibility: 'details', share_sessions: true, share_projects: false });
   } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('loads available sharing groups using the current access token', async () => {
+  const originalFetch = globalThis.fetch;
+  let request: { input: string | URL | Request; authorization: string | null } | undefined;
+  globalThis.fetch = async (input, init) => {
+    request = { input, authorization: new Headers(init?.headers).get('Authorization') };
+    return Response.json({ groups: [{ id: 'group-1', name: 'Friends', member_count: 2, is_owner: true }] });
+  };
+  try {
+    setAccessToken('test-token');
+    const result = await publicApi.getSharingGroups();
+    assert.deepEqual(result.groups.map(group => group.id), ['group-1']);
+    assert.equal(request?.input, 'https://harness-analyzer-api.marketmaker.cc/api/me/sharing/groups');
+    assert.equal(request?.authorization, 'Bearer test-token');
+  } finally {
+    setAccessToken(null);
     globalThis.fetch = originalFetch;
   }
 });

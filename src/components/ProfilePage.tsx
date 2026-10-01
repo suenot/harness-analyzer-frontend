@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApi } from '../hooks/useApi';
-import { publicApi, type SharingSettings, type SharingVisibility } from '../lib/api';
+import { publicApi, type SharingGroup, type SharingSettings, type SharingVisibility } from '../lib/api';
 import { CLI_INSTALL_COMMAND } from '../lib/cli';
 import { isValidPublicHandle } from '../lib/navigation';
+import { normalizeAllowedEmails, normalizeAllowedGroupIds } from '../lib/sharing';
 import { useHarnessAuth } from './AuthGate';
 
 const OPTIONS: Array<{ value: SharingVisibility; title: string; body: string }> = [
@@ -10,6 +11,14 @@ const OPTIONS: Array<{ value: SharingVisibility; title: string; body: string }> 
   { value: 'totals', title: 'Totals only', body: 'Share total cost, tokens, sessions and activity counts.' },
   { value: 'details', title: 'Totals + details', body: 'Also share aggregate daily, model, harness and hourly charts.' },
 ];
+
+const EMAIL_PATTERN = /^[^\s@,;\u0000-\u001f\u007f]+@[^\s@,;\u0000-\u001f\u007f]+\.[^\s@,;\u0000-\u001f\u007f]+$/;
+
+function sameRecipients(left: string[], right: string[]): boolean {
+  const sortedLeft = [...left].sort();
+  const sortedRight = [...right].sort();
+  return sortedLeft.length === sortedRight.length && sortedLeft.every((item, index) => item === sortedRight[index]);
+}
 
 export function ProfilePage() {
   const { session, logout, updateOwnHandle } = useHarnessAuth();
@@ -23,23 +32,52 @@ export function ProfilePage() {
   const [syncToken, setSyncToken] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
   const [syncBusy, setSyncBusy] = useState(false);
+  const [emailDraft, setEmailDraft] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [groups, setGroups] = useState<SharingGroup[]>([]);
+  const [groupsStatus, setGroupsStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
+  const [groupsRetry, setGroupsRetry] = useState(0);
 
   useEffect(() => { document.title = 'Profile | Harness Analyzer'; }, []);
   useEffect(() => { if (data) { setForm(data); setPersisted(data); } }, [data]);
+  useEffect(() => {
+    if (form?.audience !== 'selected') return;
+    let cancelled = false;
+    setGroupsStatus('loading');
+    publicApi.getSharingGroups()
+      .then(result => { if (!cancelled) { setGroups(result.groups); setGroupsStatus('loaded'); } })
+      .catch(() => { if (!cancelled) setGroupsStatus('error'); });
+    return () => { cancelled = true; };
+  }, [form?.audience, groupsRetry]);
 
   const normalizedHandle = form?.handle.trim().toLowerCase() || '';
   const handleValid = isValidPublicHandle(normalizedHandle);
   const dirty = useMemo(() => !!form && !!persisted && (
     normalizedHandle !== persisted.handle
     || form.visibility !== persisted.visibility
+    || form.audience !== persisted.audience
+    || !sameRecipients(normalizeAllowedEmails(form.allowed_emails), normalizeAllowedEmails(persisted.allowed_emails))
+    || !sameRecipients(normalizeAllowedGroupIds(form.allowed_group_ids), normalizeAllowedGroupIds(persisted.allowed_group_ids))
     || form.leaderboard_opt_in !== persisted.leaderboard_opt_in
     || form.share_sessions !== persisted.share_sessions
     || form.share_projects !== persisted.share_projects
   ), [form, persisted, normalizedHandle]);
-  const canSave = handleValid && !!form && (dirty || form.visibility !== 'private');
+  const selectedNeedsRecipients = !!form && form.visibility !== 'private' && form.audience === 'selected'
+    && normalizeAllowedEmails(form.allowed_emails).length + normalizeAllowedGroupIds(form.allowed_group_ids).length === 0;
+  const canSave = handleValid && !!form && !selectedNeedsRecipients && (dirty || form.visibility !== 'private');
+
+  const addEmail = () => {
+    if (!form) return;
+    const email = emailDraft.trim().toLowerCase();
+    if (email.length > 254 || !EMAIL_PATTERN.test(email)) { setEmailError('Enter a valid email address.'); return; }
+    setForm({ ...form, allowed_emails: normalizeAllowedEmails([...form.allowed_emails, email]) });
+    setEmailDraft('');
+    setEmailError(null);
+    setSaved(false);
+  };
 
   const save = async () => {
-    if (!form || !handleValid || (form.visibility === 'private' && !dirty)) return;
+    if (!form || !canSave) return;
     setSaving(true);
     setSaveError(null);
     setSaved(false);
@@ -47,7 +85,10 @@ export function ProfilePage() {
       const next = await publicApi.updateSharing({
         handle: normalizedHandle,
         visibility: form.visibility,
-        leaderboard_opt_in: form.visibility === 'private' ? false : form.leaderboard_opt_in,
+        audience: form.audience,
+        allowed_emails: normalizeAllowedEmails(form.allowed_emails),
+        allowed_group_ids: normalizeAllowedGroupIds(form.allowed_group_ids),
+        leaderboard_opt_in: form.visibility === 'private' || form.audience === 'selected' ? false : form.leaderboard_opt_in,
         share_sessions: form.visibility === 'details' && form.share_sessions,
         share_projects: form.visibility === 'details' && form.share_projects,
       });
@@ -66,7 +107,7 @@ export function ProfilePage() {
     if (!persisted || persisted.visibility === 'private') return;
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/u/${persisted.handle}`);
-      setCopyStatus('Public link copied.');
+      setCopyStatus(persisted.audience === 'selected' ? 'Shared link copied.' : 'Public link copied.');
     } catch {
       setCopyStatus('Copy failed. Open the profile and copy its address.');
     }
@@ -126,8 +167,8 @@ export function ProfilePage() {
           <section className="border-b-2 border-[var(--line-strong)] p-4 sm:p-6 lg:border-b-0 lg:border-r-2">
             <label htmlFor="public-handle" className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Public handle</label>
             <div className="mt-3 flex border-2 border-[var(--line-strong)] bg-[var(--paper)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--signal)]"><span className="grid w-11 shrink-0 place-items-center border-r border-[var(--line-strong)] font-mono font-bold">@</span><input id="public-handle" value={form.handle} onChange={event => { setSaved(false); setForm({ ...form, handle: event.target.value.toLowerCase() }); }} maxLength={40} autoCapitalize="none" autoCorrect="off" className="min-h-12 min-w-0 flex-1 border-0 bg-transparent px-3 font-mono text-sm outline-none" /></div>
-            {!handleValid ? <p className="mt-2 text-xs leading-5 text-[var(--signal)]">Use 2-40 lowercase letters or numbers. Hyphens can separate words.</p> : <p className="mt-2 text-xs leading-5 text-[var(--muted)]">Your public page: /u/{normalizedHandle}</p>}
-            {persisted && persisted.visibility !== 'private' ? <div className="mt-5 flex flex-wrap gap-2"><a href={`/u/${encodeURIComponent(persisted.handle)}`} className="inline-flex min-h-11 items-center border-2 border-[var(--line-strong)] px-4 font-mono text-xs font-bold uppercase hover:bg-[var(--ink)] hover:text-[var(--paper)]">View public profile</a><button type="button" onClick={copyPublicLink} className="min-h-11 border-2 border-[var(--line-strong)] bg-[var(--paper-deep)] px-4 font-mono text-xs font-bold uppercase hover:bg-[var(--ink)] hover:text-[var(--paper)]">Copy link</button><span aria-live="polite" className="w-full text-xs text-[var(--muted)]">{copyStatus}</span></div> : null}
+            {!handleValid ? <p className="mt-2 text-xs leading-5 text-[var(--signal)]">Use 2-40 lowercase letters or numbers. Hyphens can separate words.</p> : <p className="mt-2 text-xs leading-5 text-[var(--muted)]">Your profile URL: /u/{normalizedHandle}</p>}
+            {persisted && persisted.visibility !== 'private' ? <div className="mt-5 flex flex-wrap gap-2"><a href={`/u/${encodeURIComponent(persisted.handle)}`} className="inline-flex min-h-11 items-center border-2 border-[var(--line-strong)] px-4 font-mono text-xs font-bold uppercase hover:bg-[var(--ink)] hover:text-[var(--paper)]">View {persisted.audience === 'selected' ? 'shared' : 'public'} profile</a><button type="button" onClick={copyPublicLink} className="min-h-11 border-2 border-[var(--line-strong)] bg-[var(--paper-deep)] px-4 font-mono text-xs font-bold uppercase hover:bg-[var(--ink)] hover:text-[var(--paper)]">Copy link</button><span aria-live="polite" className="w-full text-xs text-[var(--muted)]">{copyStatus}</span></div> : null}
           </section>
 
           <fieldset className="min-w-0 p-4 sm:p-6">
@@ -135,12 +176,37 @@ export function ProfilePage() {
             <div className="mt-3 grid gap-px border-2 border-[var(--line-strong)] bg-[var(--line-strong)]">
               {OPTIONS.map(option => (
                 <label key={option.value} className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-3 bg-[var(--paper)] p-4 hover:bg-[var(--paper-soft)]">
-                  <input type="radio" name="sharing" value={option.value} checked={form.visibility === option.value} onChange={() => { setSaved(false); setForm({ ...form, visibility: option.value, leaderboard_opt_in: option.value === 'private' ? false : form.leaderboard_opt_in, share_sessions: option.value === 'details' ? form.share_sessions : false, share_projects: option.value === 'details' ? form.share_projects : false }); }} className="mt-1 h-4 w-4 accent-[var(--signal)]" />
+                  <input type="radio" name="sharing" value={option.value} checked={form.visibility === option.value} onChange={() => { setSaved(false); setForm({ ...form, visibility: option.value, leaderboard_opt_in: option.value === 'private' || form.audience === 'selected' ? false : form.leaderboard_opt_in, share_sessions: option.value === 'details' ? form.share_sessions : false, share_projects: option.value === 'details' ? form.share_projects : false }); }} className="mt-1 h-4 w-4 accent-[var(--signal)]" />
                   <span><strong className="block text-sm font-black uppercase tracking-[0.04em]">{option.title}</strong><span className="mt-1 block text-xs leading-5 text-[var(--muted)]">{option.body}</span></span>
                 </label>
               ))}
             </div>
-            {form.visibility !== 'private' ? (
+            {form.visibility !== 'private' ? <fieldset className="mt-4 border border-[var(--line-strong)] p-3">
+              <legend className="px-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Who can view</legend>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <label className="flex cursor-pointer gap-3 border border-[var(--line-strong)] p-3"><input type="radio" name="audience" checked={form.audience === 'public'} onChange={() => { setSaved(false); setForm({ ...form, audience: 'public' }); }} className="mt-0.5 h-4 w-4 accent-[var(--signal)]" /><span><strong className="block text-xs uppercase">Everyone</strong><span className="mt-1 block text-xs leading-5 text-[var(--muted)]">Anyone with your link can view.</span></span></label>
+                <label className="flex cursor-pointer gap-3 border border-[var(--line-strong)] p-3"><input type="radio" name="audience" checked={form.audience === 'selected'} onChange={() => { setSaved(false); setForm({ ...form, audience: 'selected', leaderboard_opt_in: false }); }} className="mt-0.5 h-4 w-4 accent-[var(--signal)]" /><span><strong className="block text-xs uppercase">Selected people or groups</strong><span className="mt-1 block text-xs leading-5 text-[var(--muted)]">People sign in with a verified email to view.</span></span></label>
+              </div>
+              {form.audience === 'selected' ? <div className="mt-4 space-y-4">
+                <div>
+                  <label htmlFor="allowed-email" className="font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Friends by email</label>
+                  <p className="mt-1 text-xs leading-5 text-[var(--muted)]">Access matches the email verified in Auth Service.</p>
+                  <div className="mt-2 flex flex-wrap gap-2"><input id="allowed-email" type="email" value={emailDraft} onChange={event => { setEmailDraft(event.target.value); setEmailError(null); }} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addEmail(); } }} placeholder="friend@example.com" className="min-h-11 min-w-48 flex-1 border-2 border-[var(--line-strong)] bg-[var(--paper)] px-3 text-sm" /><button type="button" onClick={addEmail} className="min-h-11 border-2 border-[var(--line-strong)] px-4 font-mono text-xs font-bold uppercase">Add email</button></div>
+                  {emailError ? <p role="alert" className="mt-2 text-xs text-[var(--signal)]">{emailError}</p> : null}
+                  {form.allowed_emails.length ? <ul className="mt-2 flex flex-wrap gap-2">{form.allowed_emails.map(email => <li key={email} className="flex items-center gap-2 border border-[var(--line-strong)] bg-[var(--paper-deep)] px-2 py-1 text-xs"><span>{email}</span><button type="button" onClick={() => { setSaved(false); setForm({ ...form, allowed_emails: form.allowed_emails.filter(value => value !== email) }); }} aria-label={`Remove ${email}`} className="min-h-7 px-1 font-bold text-[var(--signal)]">×</button></li>)}</ul> : null}
+                </div>
+                <div>
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Auth Service groups</p>
+                  {groupsStatus === 'loading' ? <p className="mt-2 text-xs text-[var(--muted)]">Loading groups…</p> : null}
+                  {groupsStatus === 'error' ? <div className="mt-2 flex flex-wrap items-center gap-2"><p role="alert" className="text-xs text-[var(--signal)]">Groups could not be loaded.</p><button type="button" onClick={() => setGroupsRetry(value => value + 1)} className="min-h-9 border border-[var(--line-strong)] px-3 font-mono text-xs font-bold uppercase">Retry</button></div> : null}
+                  {groupsStatus === 'loaded' && !groups.length ? <p className="mt-2 text-xs text-[var(--muted)]">You have no available groups.</p> : null}
+                  {groups.length ? <div className="mt-2 grid gap-2">{groups.map(group => <label key={group.id} className="flex min-h-11 cursor-pointer items-center gap-3 border border-[var(--line-strong)] p-3"><input type="checkbox" checked={form.allowed_group_ids.includes(group.id)} onChange={event => { setSaved(false); setForm({ ...form, allowed_group_ids: event.target.checked ? normalizeAllowedGroupIds([...form.allowed_group_ids, group.id]) : form.allowed_group_ids.filter(id => id !== group.id) }); }} className="h-4 w-4 accent-[var(--signal)]" /><span className="text-xs"><strong>{group.name}</strong><span className="ml-2 text-[var(--muted)]">{group.member_count} members</span></span></label>)}</div> : null}
+                  {form.allowed_group_ids.filter(id => !groups.some(group => group.id === id)).length ? <div className="mt-2"><p className="text-xs text-[var(--muted)]">{groupsStatus === 'loaded' ? 'Saved groups not in the current list:' : 'Saved groups awaiting lookup:'}</p><ul className="mt-2 grid gap-2">{form.allowed_group_ids.filter(id => !groups.some(group => group.id === id)).map(id => <li key={id} className="flex min-h-11 items-center justify-between gap-2 border border-[var(--line-strong)] p-3 text-xs"><span className="break-all">{id}</span><button type="button" onClick={() => { setSaved(false); setForm({ ...form, allowed_group_ids: form.allowed_group_ids.filter(value => value !== id) }); }} className="font-mono font-bold uppercase text-[var(--signal)]">Remove</button></li>)}</ul></div> : null}
+                </div>
+                {selectedNeedsRecipients ? <p role="alert" className="text-xs text-[var(--signal)]">Add at least one email or group before saving.</p> : null}
+              </div> : null}
+            </fieldset> : null}
+            {form.visibility !== 'private' && form.audience === 'public' ? (
               <label className="mt-4 flex min-h-11 cursor-pointer items-start gap-3 border border-[var(--line-strong)] p-3"><input type="checkbox" checked={form.leaderboard_opt_in} onChange={event => { setSaved(false); setForm({ ...form, leaderboard_opt_in: event.target.checked }); }} className="mt-0.5 h-4 w-4 accent-[var(--signal)]" /><span><strong className="block text-xs uppercase tracking-[0.06em]">Include me in Users ranking</strong><span className="mt-1 block text-xs leading-5 text-[var(--muted)]">Your public link works either way. This separate option adds your handle and ranking value to Users.</span></span></label>
             ) : null}
             <fieldset className={`mt-4 border border-[var(--line-strong)] p-3 ${form.visibility === 'details' ? '' : 'opacity-55'}`}>

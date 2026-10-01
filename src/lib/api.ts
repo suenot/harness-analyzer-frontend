@@ -277,11 +277,15 @@ export interface UsageBreakdownEntry {
 export type UsageBreakdown = Record<string, UsageBreakdownEntry>;
 
 export type SharingVisibility = 'private' | 'totals' | 'details';
+export type SharingAudience = 'public' | 'selected';
 
 export interface SharingSettings {
   handle: string;
   display_name: string;
   visibility: SharingVisibility;
+  audience: SharingAudience;
+  allowed_emails: string[];
+  allowed_group_ids: string[];
   leaderboard_opt_in: boolean;
   share_sessions: boolean;
   share_projects: boolean;
@@ -325,9 +329,17 @@ export interface PublicUserProfile {
   handle: string;
   display_name: string;
   visibility: Exclude<SharingVisibility, 'private'>;
+  audience: SharingAudience;
   share_sessions: boolean;
   share_projects: boolean;
   snapshot: PublicSnapshotV1;
+}
+
+export interface SharingGroup {
+  id: string;
+  name: string;
+  member_count: number;
+  is_owner: boolean;
 }
 
 export type LeaderboardMetric = 'tokens' | 'cost' | 'sessions';
@@ -387,7 +399,8 @@ export const api = {
 
 export const publicApi = {
   getSharing: () => fetchJsonAt<SharingSettings>(PUBLIC_BASE, '/me/sharing'),
-  updateSharing: (settings: Partial<Pick<SharingSettings, 'handle' | 'display_name' | 'visibility' | 'leaderboard_opt_in' | 'share_sessions' | 'share_projects'>>) => (
+  getSharingGroups: () => fetchJsonAt<{ groups: SharingGroup[] }>(PUBLIC_BASE, '/me/sharing/groups'),
+  updateSharing: (settings: Partial<Pick<SharingSettings, 'handle' | 'display_name' | 'visibility' | 'audience' | 'allowed_emails' | 'allowed_group_ids' | 'leaderboard_opt_in' | 'share_sessions' | 'share_projects'>>) => (
     fetchJsonAt<SharingSettings>(PUBLIC_BASE, '/me/sharing', {
       method: 'PUT',
       body: JSON.stringify(settings),
